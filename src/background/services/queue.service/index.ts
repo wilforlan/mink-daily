@@ -1,1 +1,1 @@
-export * from './queue.service';
+export * from './job.service';

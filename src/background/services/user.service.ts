@@ -11,8 +11,8 @@ import type { LocalStorageService } from './local-storage.service';
 import { captureError } from '@/src/background/commons/sentry-log';
 import { analyticsTrack, SegmentAnalyticsEvents } from '@/src/background/commons/analytics';
 import type { ILoginUserRes } from '@/src/interfaces';
-import { ServerApi } from '../commons/server-api';
 import OpenAIService from './openai.service';
+import { queueService } from '.';
 
 const validateEmail = (email: string) => {
   // complex regex for email validation
@@ -40,6 +40,28 @@ export class UserService {
       throw new Error('Invalid OpenAI key');
     }
     await this.localStorageService.put('user', accountInfo);
+    
+    await analyticsTrack(SegmentAnalyticsEvents.USER_SIGNUP, {
+      email: accountInfo.email,
+    });
+
+    const settings = await this.localStorageService.get('settings');
+    
+    if (!settings) {
+      await this.localStorageService.put('settings', {
+        options: {
+          executeSummariesAfter: 24, // 24 hours
+          deleteDataEvery: 3, // 3 days
+          forwardMinkDigestToEmail: true, // true
+          maxAllowedLinksPerDay: 200,
+          shouldIgnoreSocialMediaPlatforms: true,
+          startTrackingSessionAfter: 5, // 5 minutes
+          ignoredWebsiteList: [],
+        },
+      });
+    }
+
+    await queueService.createSummarizationJob();
     return accountInfo;
   }
 
@@ -62,6 +84,13 @@ export class UserService {
     //   shouldIgnoreSocialMediaPlatforms: true,
     //   startTrackingSessionAfter: 5, // 5 minutes
     // }
+    const currentSettings = await this.localStorageService.get('settings');
+    const shouldAddJob = settings.executeSummariesAfter !== currentSettings.options.executeSummariesAfter;
+    if (shouldAddJob) {
+      console.log('Creating summarization job because settings changed for executeSummariesAfter');
+      await queueService.createSummarizationJob();
+    }
+
     await this.localStorageService.update('settings', {
       options: settings,
     });

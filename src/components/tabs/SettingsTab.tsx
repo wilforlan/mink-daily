@@ -11,7 +11,6 @@ export default function SettingsTab() {
       const resp = await sendToBackground({
         name: 'get-account-settings',
       });
-      console.log({ resp });
       if (!resp.status) throw new Error(resp.error || 'Failed to get settings');
       setSettings(resp?.settings?.options);
     } catch (error) {
@@ -54,7 +53,7 @@ export default function SettingsTab() {
         <div className="space-y-5">
           <SettingOption
             title="Start Mink on page after"
-            description="Set the time after which Mink should start running on your page content."
+            description="Set the time after which Mink should start on every webpage."
             value={settings?.startTrackingSessionAfter || 3}
             onChange={(e: any) => update('startTrackingSessionAfter', e.target.value)}
             type="dropdown"
@@ -77,8 +76,8 @@ export default function SettingsTab() {
 
           <SettingOption
             title="Run my Mink summarisation every"
-            description="Get notified when a candidate accepts or rejects an offer."
-            value={settings?.executeSummariesAfter || 12}
+            description="Set the time after which Mink should run on your content."
+            value={settings?.executeSummariesAfter || 24}
             onChange={(e: any) => update('executeSummariesAfter', e.target.value)}
             type="dropdown"
             options={[
@@ -143,7 +142,7 @@ export default function SettingsTab() {
 
           <SettingOption
             title="Notifications"
-            description="Get notified about new features, updates, and more."
+            description="Receive Mink notifications on your email."
             value={!!settings?.forwardMinkDigestToEmail}
             onChange={(e: any) => update('forwardMinkDigestToEmail', e)}
           />

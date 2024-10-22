@@ -1,1 +1,1 @@
-export * from './create-single-page-summerization.task';
+export * from './create-summerization-and-insights';

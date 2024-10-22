@@ -1,7 +1,6 @@
-// import { userService } from '~background/services';
-import { configStore } from '~background/commons/constants';
-import { captureError } from '~background/commons/sentry-log';
-import type { UnknownType } from '~interfaces';
+import { configStore } from '@/src/background/commons/constants';
+import { captureError } from '@/src/background/commons/sentry-log';
+import type { UnknownType } from '@/src/interfaces';
 
 const version = chrome?.runtime?.getManifest?.()?.version;
 
@@ -44,7 +43,7 @@ const Analytics = (key: string) => {
   const getContext = async () => {
     return {
       ip: '',
-      library: { name: 'chrome-extension', version },
+      library: { name: 'mink-daily', version },
     };
   };
 

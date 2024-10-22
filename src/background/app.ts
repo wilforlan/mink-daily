@@ -3,7 +3,7 @@ import { configStore } from './commons/constants';
 import { initializeSentry } from './commons/sentry-log';
 import { showChromeNotification } from '@/src/background/utils';
 import { SegmentAnalyticsEvents, analyticsTrack, analyticsTrackWithoutIdentity } from '@/src/background/commons/analytics';
-import { userService } from './services';
+import { queueService, userService } from './services';
 import localStorageService from './services/local-storage.service';
 import moment from 'moment';
 import { v4 as uuid } from 'uuid';
@@ -39,7 +39,7 @@ export class BackgroundApp extends ServiceWorkerApp {
     });
 
     // @ts-ignore
-    localStorageService.put('userUuid', uuid());
+    localStorageService.put('userId', uuid());
 
     // Here we're duplicating the default setting state manually to avoid
     // then being undefined for some reason, ideally this should be shared in
@@ -48,22 +48,21 @@ export class BackgroundApp extends ServiceWorkerApp {
         // @ts-ignore
       .put('settings', {
         options: {
-          autoCapture: true,
-          enableAskFredPanel: false,
-          enableRealtimePanel: true,
-          allowShareSettings: true,
-          captureWhenFredJoined: true,
-        },
-        limits: {
-          youtubeSummary: {
-            date: moment().format(YoutubeSummary.dateFormat),
-            usedCredits: 0,
-          },
-        },
+          executeSummariesAfter: 24, // 24 hours
+          deleteDataEvery: 3, // 3 days
+          forwardMinkDigestToEmail: true, // true
+          maxAllowedLinksPerDay: 200,
+          shouldIgnoreSocialMediaPlatforms: true,
+          startTrackingSessionAfter: 5, // 5 minutes
+          ignoredWebsiteList: [],
+        }
       })
       .then(() => {
         console.debug('Settings initialized');
       });
+    
+    queueService.createSummarizationJob();
+    queueService.createDataRetentionPolicyCleanupJob();
   }
 
   async onUpdated() {
@@ -113,13 +112,15 @@ export class BackgroundApp extends ServiceWorkerApp {
         ...analyticsParams,
         timestamp: new Date().toISOString(),
       });
-      console.info('App update analytics not sent successfully');
+      console.info('App update analytics sent successfully');
     } catch (error) {
       console.error(error as Error);
     }
 
     // @ts-ignore
     await localStorageService.delete('upcoming_version');
+    queueService.createSummarizationJob();
+    queueService.createDataRetentionPolicyCleanupJob();
   }
 
   async ensureUserStorage() {
@@ -144,6 +145,7 @@ export class BackgroundApp extends ServiceWorkerApp {
   }
 
   async onInit() {
+    console.debug('App init event received');
     initializeSentry();
 
     await this.ensureUserStorage();
@@ -197,5 +199,7 @@ export class BackgroundApp extends ServiceWorkerApp {
         await localStorageService.put('upcoming_version', newVersion);
       }
     });
+    queueService.createSummarizationJob();
+    queueService.createDataRetentionPolicyCleanupJob();
   }
 }

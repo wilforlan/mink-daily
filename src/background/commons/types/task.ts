@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { UnknownType } from '~interfaces';
+import type { UnknownType } from '@/src/interfaces';
 
 export class Task<T, R = UnknownType> {
   constructor(readonly name: string) {}

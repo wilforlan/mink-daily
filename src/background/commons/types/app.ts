@@ -1,20 +1,13 @@
-import type { SegmentAnalyticsEvents } from '../utils/analytics';
-
 export interface ApplicationOptions {
-  autoCapture: boolean;
-  enableAskFredPanel: boolean;
-  enableRealtimePanel: boolean;
-  allowShareSettings: boolean;
-  captureWhenFredJoined: boolean;
-  event?: SegmentAnalyticsEvents;
+  executeSummariesAfter: number, // 24 hours
+  deleteDataEvery: number, // 3 days
+  forwardMinkDigestToEmail: boolean, // true
+  maxAllowedLinksPerDay: number,
+  shouldIgnoreSocialMediaPlatforms: boolean,
+  startTrackingSessionAfter: number, // 5 minutes
+  ignoredWebsiteList: [],
 }
 
 export interface ApplicationState {
   options: ApplicationOptions;
-  limits: {
-    youtubeSummary: {
-      date: string;
-      usedCredits: number;
-    };
-  };
 }

@@ -10,10 +10,7 @@ export enum SegmentAnalyticsEvents {
   ACCOUNT_SETUP_COMPLETE = 'Account Setup Complete - Chrome Extension',
   EXTENSION_INSTALLED = 'App Installed - Chrome Extension',
   EXTENSION_UPDATED = 'App Updated - Chrome Extension',
-  MANUAL_RELOAD_EXTENSION = 'Extension reloaded manually - Chrome Extension',
-  MEETING_PAGE_VISITED = 'Meeting page visited - Chrome Extension',
-  MANUAL_UPLOAD_CLICKED = 'Manual upload clicked - Chrome Extension',
-  FRED_PRESENCE_CHECK = 'Fred presence check - Chrome Extension',
+  USER_SIGNUP = 'User Signup - Chrome Extension',
 }
 
 const updateIdentity = async () => {
