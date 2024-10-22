@@ -9,11 +9,11 @@
     "./**/*.tsx"
   ],
   "compilerOptions": {
+    "jsx": "preserve",
     "paths": {
-      "~*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
-    "baseUrl": "."
+    "baseUrl": ".",
+    "isolatedModules": true
   }
 }

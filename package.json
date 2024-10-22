@@ -1,31 +1,84 @@
 {
-  "name": "mink-daily",
-  "displayName": "Mink daily",
+  "name": "assisfy",
+  "displayName": "Assisfy",
   "version": "0.0.1",
   "description": "An extension to help you with daily research",
   "author": "williams@viroke.com",
+  "license": "MIT",
   "scripts": {
+    "package": "plasmo package",
     "dev": "plasmo dev",
-    "build": "plasmo build",
-    "package": "plasmo package"
+    "build": "plasmo build"
   },
   "dependencies": {
+    "@growthbook/growthbook-react": "^1.2.1",
+    "@headlessui/react": "^2.1.10",
+    "@heroicons/react": "^2.1.5",
+    "@plasmohq/messaging": "^0.6.2",
+    "@react-oauth/google": "^0.12.1",
+    "@sentry/react": "^8.34.0",
+    "dexie": "^4.0.8",
+    "firebase": "^10.14.1",
+    "moment": "^2.30.1",
+    "next": "14.1.0",
+    "next-auth": "^4.24.8",
     "plasmo": "0.89.3",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "semver": "^7.6.3",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "4.1.1",
+    "@plasmohq/rps": "workspace:*",
+    "@plasmohq/storage": "^1.12.0",
     "@types/chrome": "0.0.258",
     "@types/node": "20.11.5",
     "@types/react": "18.2.48",
     "@types/react-dom": "18.2.18",
+    "@types/uuid": "^10.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
     "prettier": "3.2.4",
+    "tailwindcss": "^3.4.13",
     "typescript": "5.3.3"
   },
   "manifest": {
     "host_permissions": [
       "https://*/*"
-    ]
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "assets/images/*",
+          "assets/fonts/*",
+          "assets/icons/*"
+        ],
+        "matches": [
+          "<all_urls>"
+        ]
+      }
+    ],
+    "permissions": [
+      "storage",
+      "scripting",
+      "activeTab",
+      "offscreen",
+      "unlimitedStorage",
+      "notifications",
+      "tabs"
+    ],
+    "key": "$CRX_KEY",
+    "content_security_policy": {
+      "extension_pages": "script-src 'self' http://localhost; object-src 'self'"
+    },
+    "oauth2": {
+      "client_id": "$OAUTH2_CLIENT_ID",
+      "scopes": [
+        "openid",
+        "email",
+        "profile"
+      ]
+    }
   }
 }

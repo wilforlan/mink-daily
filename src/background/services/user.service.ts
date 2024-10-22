@@ -1,0 +1,74 @@
+import { configStore } from '@/src/background/commons/constants';
+import type {
+  LocalStorageMetadata,
+} from '@/src/background/commons/types';
+
+import {
+  showChromeNotification,
+} from '@/src/background/utils';
+
+import type { LocalStorageService } from './local-storage.service';
+import { captureError } from '@/src/background/commons/sentry-log';
+import { analyticsTrack, SegmentAnalyticsEvents } from '@/src/background/commons/analytics';
+import type { ILoginUserRes } from '@/src/interfaces';
+import { ServerApi } from '../commons/server-api';
+import OpenAIService from './openai.service';
+
+const validateEmail = (email: string) => {
+  // complex regex for email validation
+  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return re.test(email);
+};
+
+export class UserService {
+  constructor(private readonly localStorageService: LocalStorageService<LocalStorageMetadata>) {}
+
+  async getAccountInfo() {
+    const user = await this.localStorageService.get('user');
+    return user;
+  }
+
+  async setAccountInfo(accountInfo: ILoginUserRes) {
+    const openai = new OpenAIService(accountInfo.llmApiKey);
+
+    const emailValid = validateEmail(accountInfo.email);
+    if (!emailValid) {
+      throw new Error('Invalid email');
+    }
+    const openAIKeyValid = await openai.testChatApiKey(accountInfo.llmApiKey);
+    if (!openAIKeyValid) {
+      throw new Error('Invalid OpenAI key');
+    }
+    await this.localStorageService.put('user', accountInfo);
+    return accountInfo;
+  }
+
+  async logoutUser(silent?: boolean) {
+    await this.localStorageService.delete('user');
+    if (!silent) {
+      showChromeNotification({
+        title: 'Logged out',
+        message: 'You have been logged out',
+      });
+    }
+  }
+
+  async updateSettings(settings: any) {
+    // options: {
+    //   executeSummariesAfter: 24, // 24 hours
+    //   deleteDataEvery: 3, // 3 days
+    //   forwardMinkDigestToEmail: true, // true
+    //   maxAllowedLinksPerDay: 200,
+    //   shouldIgnoreSocialMediaPlatforms: true,
+    //   startTrackingSessionAfter: 5, // 5 minutes
+    // }
+    await this.localStorageService.update('settings', {
+      options: settings,
+    });
+  }
+
+  async getSettings() {
+    const settings = await this.localStorageService.get('settings');
+    return settings;
+  }
+}
