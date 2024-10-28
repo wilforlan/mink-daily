@@ -53,9 +53,9 @@ export class UserService {
           executeSummariesAfter: 24, // 24 hours
           deleteDataEvery: 3, // 3 days
           forwardMinkDigestToEmail: true, // true
-          maxAllowedLinksPerDay: 200,
+          maxAllowedLinksPerDay: 100,
           shouldIgnoreSocialMediaPlatforms: true,
-          startTrackingSessionAfter: 5, // 5 minutes
+          startTrackingSessionAfter: 3, // 3 minutes
           ignoredWebsiteList: [],
         },
       });
@@ -80,9 +80,9 @@ export class UserService {
     //   executeSummariesAfter: 24, // 24 hours
     //   deleteDataEvery: 3, // 3 days
     //   forwardMinkDigestToEmail: true, // true
-    //   maxAllowedLinksPerDay: 200,
+    //   maxAllowedLinksPerDay: 100,
     //   shouldIgnoreSocialMediaPlatforms: true,
-    //   startTrackingSessionAfter: 5, // 5 minutes
+    //   startTrackingSessionAfter: 3, // 3 minutes
     // }
     const currentSettings = await this.localStorageService.get('settings');
     const shouldAddJob = settings.executeSummariesAfter !== currentSettings.options.executeSummariesAfter;
@@ -94,6 +94,7 @@ export class UserService {
     await this.localStorageService.update('settings', {
       options: settings,
     });
+    return settings;
   }
 
   async getSettings() {

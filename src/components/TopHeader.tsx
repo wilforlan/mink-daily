@@ -12,16 +12,19 @@ import {
 } from '@heroicons/react/20/solid'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { useUser } from '../providers/user.provider';
+import { getImage } from '../misc';
+import icon from "data-base64:~content-assets/icon.png"
 
 const today = new Date();
 
-export default function TopHeader() {
+export default function TopHeader({ onDateChange }: { onDateChange: (date: string) => void }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const { logOut } = useUser();
 
   const handleDateChange = (date: Date) => {
     setCurrentDate(date);
+    onDateChange(date.toISOString());
   }
 
   useEffect(() => {
@@ -42,11 +45,14 @@ export default function TopHeader() {
   return (
     <div className={`flex items-center justify-between p-4 sticky top-0 transition-colors duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-transparent'}`}>
       <div className="min-w-0 flex-1">
-        <h2 className="text-2xl font-bold leading-7 text-gray-900 text-3xl">
-          Mink Daily
-          {/* beta tag */}
-          <span className="ml-2 inline-block bg-yellow-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">Beta</span>
-        </h2>
+        <div className="flex items-center">
+          <img src={icon} alt="Mink Logo" className="w-20 h-16" />
+          <h2 className="text-2xl font-bold leading-7 text-gray-900 text-3xl">
+            Mink
+            {/* beta tag */}
+            <span className="ml-2 inline-block bg-yellow-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">Beta</span>
+          </h2>
+        </div>
         <div className="mt-1 flex flex-col">
           <div className="mt-2 flex items-center text-sm text-gray-500">
             <div className='flex py-1'>
@@ -64,7 +70,7 @@ export default function TopHeader() {
             {today.toLocaleDateString() !== currentDate.toLocaleDateString() && <button
               type="button"
               className="ml-5 inline-flex items-center rounded-md bg-white px-3 py-1 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              onClick={() => setCurrentDate(new Date())}
+              onClick={() => handleDateChange(new Date())}
             >
               <CalendarIcon aria-hidden="true" className="-ml-0.5 mr-1.5 h-5 w-5 text-gray-400" />
               Today

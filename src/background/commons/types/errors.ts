@@ -1,14 +1,8 @@
-import type { UnknownType } from '~interfaces';
+import type { UnknownType } from '@/src/interfaces';
 
 export class NoCreditLeftError extends Error {
   constructor(private readonly userId: string) {
     super(`No credits left to record meeting for ${userId}`);
-  }
-}
-
-export class MeetingNotFoundError extends Error {
-  constructor(private readonly meetingId: string) {
-    super(`Meeting ${meetingId} not found`);
   }
 }
 

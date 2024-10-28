@@ -7,7 +7,7 @@ import { queueService, userService } from './services';
 import localStorageService from './services/local-storage.service';
 import moment from 'moment';
 import { v4 as uuid } from 'uuid';
-import { YoutubeSummary, defaultApplicationState } from '@/src/misc';
+import { YoutubeSummary, defaultApplicationState, isProduction } from '@/src/misc';
 
 export class BackgroundApp extends ServiceWorkerApp {
 
@@ -18,7 +18,7 @@ export class BackgroundApp extends ServiceWorkerApp {
   }
 
 
-  onInstalled() {
+  async onInstalled() {
     console.debug('App installed event received');
     const welcomeUrl = chrome.runtime?.getURL('tabs/welcome.html');
     chrome.runtime.setUninstallURL(configStore.getConfig('UNINSTALL_URL'));
@@ -40,6 +40,7 @@ export class BackgroundApp extends ServiceWorkerApp {
 
     // @ts-ignore
     localStorageService.put('userId', uuid());
+    const currentSettings: any = await localStorageService.get('settings');
 
     // Here we're duplicating the default setting state manually to avoid
     // then being undefined for some reason, ideally this should be shared in
@@ -51,10 +52,11 @@ export class BackgroundApp extends ServiceWorkerApp {
           executeSummariesAfter: 24, // 24 hours
           deleteDataEvery: 3, // 3 days
           forwardMinkDigestToEmail: true, // true
-          maxAllowedLinksPerDay: 200,
+          maxAllowedLinksPerDay: 100,
           shouldIgnoreSocialMediaPlatforms: true,
-          startTrackingSessionAfter: 5, // 5 minutes
+          startTrackingSessionAfter: 3, // 3 minutes
           ignoredWebsiteList: [],
+          ...(currentSettings?.options ?? {}),
         }
       })
       .then(() => {
@@ -86,9 +88,9 @@ export class BackgroundApp extends ServiceWorkerApp {
           executeSummariesAfter: 24, // 24 hours
           deleteDataEvery: 3, // 3 days
           forwardMinkDigestToEmail: true, // true
-          maxAllowedLinksPerDay: 200,
+          maxAllowedLinksPerDay: 100,
           shouldIgnoreSocialMediaPlatforms: true,
-          startTrackingSessionAfter: 5, // 5 minutes
+          startTrackingSessionAfter: 3, // 3 minutes
           ignoredWebsiteList: [],
           ...(currentSettings?.options ?? {}),
         },

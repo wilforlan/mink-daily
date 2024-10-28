@@ -1,6 +1,6 @@
 import React from "react"
 
-function ChatTab() {
+function ChatTab({ data }: { data: any }) {
     return (
         <div className="p-4 mb-4" style={{ minHeight: 500 }}>
             <div className="bg-blue-50 shadow-md rounded-lg p-4 mb-4">

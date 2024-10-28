@@ -1,21 +1,19 @@
-import { userService } from '@/src/background/services';
+import { databaseService, minkService, userService } from '@/src/background/services';
 import type { PlasmoMessaging } from '@plasmohq/messaging';
 import { SegmentAnalyticsEvents } from '../commons/analytics';
 import { analyticsTrack } from '../commons/analytics';
 
 const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
   try {
+
     const { body } = req;
-    console.log('update-account-settings.ts: body:', body);
-    const previousSettings = await userService.getSettings();
-    const settings = await userService.updateSettings(body);
-    
-    await analyticsTrack(SegmentAnalyticsEvents.SETTINGS_UPDATED, {
-      currentSettings: settings,
-      previousSettings,
+    await minkService.saveWebpageSession(body);
+    await analyticsTrack(SegmentAnalyticsEvents.WEB_PAGE_SESSION_SAVED, {
+      title: body.title,
+      url: body.url,
+      origin: body.origin,
     });
-    
-    res.send({ status: true, settings });
+    res.send({ status: true });
   } catch (error) {
     console.error(error);
     res.send({ status: false, info: null, error: error.message || error });

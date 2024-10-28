@@ -4,6 +4,7 @@ import { captureError } from '@/src/background/commons/sentry-log';
 import { userService } from '@/src/background/services';
 import localStorageService from '@/src/background/services/local-storage.service';
 import type { UnknownType } from '@/src/interfaces';
+import { isProduction } from '@/src/misc';
 
 export enum SegmentAnalyticsEvents {
   PLATFORM_USAGE_ANALYTICS = 'Platform usage - Chrome Extension',
@@ -11,35 +12,43 @@ export enum SegmentAnalyticsEvents {
   EXTENSION_INSTALLED = 'App Installed - Chrome Extension',
   EXTENSION_UPDATED = 'App Updated - Chrome Extension',
   USER_SIGNUP = 'User Signup - Chrome Extension',
+  SUMMARIZATION_COMPLETE = 'Summarization Complete - Chrome Extension',
+  SUMMARIZATION_FAILED = 'Summarization Failed - Chrome Extension',
+  SUMMARIZATION_STARTED = 'Summarization Started - Chrome Extension',
+  USER_FETCHED_SUMMARY = 'User Fetched Summary - Chrome Extension',
+  SETTINGS_UPDATED = 'Settings Updated - Chrome Extension',
+  WEB_PAGE_SESSION_SAVED = 'Web Page Session Saved - Chrome Extension',
+  DATA_RETENTION_POLICY_CLEANUP = 'Data Retention Policy Cleanup - Chrome Extension',
 }
 
 const updateIdentity = async () => {
-  const { userId: initializedUserId } = analytics.getState('user');
+  const { email: initializedUserEmail } = analytics.getState('user');
+  const { email: userEmail } = await userService.getAccountInfo();
+  
   const userTraits = {
-    user_id: '',
-    email: '',
-    name: '',
+    email: userEmail,
   }
   // eslint-disable-next-line prefer-const
-  let { user_id: userId, email, name } = userTraits;
-  if (!userId) {
+  let { email } = userTraits;
+  
+  if (!email) {
     const error = new Error('Cannot initialize analytics due to user is not logged in');
     console.log(error);
     return;
   }
 
   // skip init if we already have the same user
-  if (userId === initializedUserId) return;
+  if (email === initializedUserEmail) return;
 
   try {
     await analytics.init(userTraits);
-    if (initializedUserId && userId !== initializedUserId) {
-      console.log(`Analytics user changed from ${initializedUserId} to ${userId}`);
+    if (initializedUserEmail && email !== initializedUserEmail) {
+      console.log(`Analytics user changed from ${initializedUserEmail} to ${email}`);
       analytics.reset();
-      userId = initializedUserId;
+      email = initializedUserEmail;
     }
-    await analytics.identify(userId, { email, name, id: userId });
-    console.log('Analytics initialized for user ', userId);
+    await analytics.identify(email, { email, name });
+    console.log('Analytics initialized for user ', email);
   } catch (err) {
     captureError(err as Error);
     console.log('Unable to initialize analytics', err);
@@ -58,7 +67,14 @@ export const analyticsTrackWithoutIdentity = async (
 };
 
 export const analyticsTrack = async (event: SegmentAnalyticsEvents, properties: UnknownType): Promise<void> => {
-  const isLoggedIn = !!(await userService.getAccountInfo());
+  if (!isProduction) return console.log('Analytics is disabled in non-production environment', {
+    event,
+    properties,
+  });
+  
+  const user = (await userService.getAccountInfo());
+  
+  const isLoggedIn = !!user;
   if (!isLoggedIn) {
     await analyticsTrackWithoutIdentity(event, properties);
     return;
@@ -71,5 +87,9 @@ export const analyticsTrack = async (event: SegmentAnalyticsEvents, properties: 
     chromeExtVersion = chrome.runtime.getManifest().version;
   }
 
-  await analytics.track(event, { ...properties, chromeExtVersion });
+  await analytics.track(event, { 
+    ...properties,
+    chromeExtVersion,
+    email: isLoggedIn ? user.email : '',
+  });
 };

@@ -1,28 +1,61 @@
-import type { AudioStore, CaptionStore, ChatStore, Meeting, SpeakerLabel } from '@/src/background/commons/types/meeting';
 import { Dexie } from 'dexie';
 import type { Table } from 'dexie';
 
+
+interface Cost {
+  prompt_cost: number;
+  completion_cost: number;
+  total_cost: number;
+}
+
+interface SummaryResults {
+  id: string;
+  summary: string;
+  analytics: string;
+  insights: string;
+  suggestions: string;
+  createdAt: Date;
+  updatedAt: Date;
+  cost: Cost;
+  createAtTs: number;
+  updatedAtTs: number;
+}
+
+interface ChatMessages {
+  id: string;
+  role: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface PageData {
+  id: string;
+  title: string;
+  url: string;
+  content: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+  origin: string;
+  contentSummary: string; // maybe or maybe not used,
+  isProcessed: string;
+}
+
 export class Database extends Dexie {
-  public meetings!: Table<Meeting>;
+  public PageData!: Table<PageData>;
 
-  public audio!: Table<AudioStore>;
+  public SummaryResults!: Table<SummaryResults>;
 
-  public captions!: Table<CaptionStore>;
-
-  public chats!: Table<ChatStore>;
-
-  public speakerLabels!: Table<SpeakerLabel>;
+  public ChatMessages!: Table<ChatMessages>;
 
   constructor() {
-    super('ff-database');
+    super('mink-db');
     this.version(5).stores({
-      meetings:
-        '++id, version, parse_id, url, has_cc, has_audio, has_uploaded_cc, audio_segments, time_ts, created_at, uploaded_at',
-      audio:
-        '++id, meeting_id, sequence_number, data, transcoded_data, has_uploaded, has_transcoded, uploaded_at, created_at',
-      captions: '++id, messageId, meeting_id',
-      chats: '++id, messageId, meeting_id',
-      shownNotifications: '++id, notificationId, endTime',
+      SummaryResults: '++id, summary, analytics, insights, suggestions, createdAt, updatedAt, createAtTs, updatedAtTs, cost',
+      ChatMessages: '++id, role, content, createdAt, updatedAt',
+      PageData: '++id, title, url, content, description, isProcessed, createdAt, updatedAt, origin, contentSummary',
+      shownNotifications: '++id, notificationId, endTime, createdAt, updatedAt',
     });
   }
 }

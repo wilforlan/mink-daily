@@ -1,6 +1,7 @@
+import Markdown from "markdown-to-jsx"
 import React from "react"
 
-function SuggestionTab() {
+function SuggestionTab({ data }: { data: any }) {
     return (
         <div className="p-4 mb-4" style={{ minHeight: 500 }}>
             <div className="bg-blue-50 shadow-md rounded-lg p-4 mb-4">
@@ -9,19 +10,16 @@ function SuggestionTab() {
                 </p>
             </div>
             <div className="bg-blue-50 shadow-md rounded-lg p-4 transition-transform transform hover:scale-105 mb-4">
-                <h3 className="text-xl font-semibold mb-2">Total Links Visited</h3>
-                <p className="text-3xl font-bold text-blue-600">12</p>
+                <h3 className="text-xl font-semibold mb-2">Suggestions</h3>
+                <p className="text-sm font-bold text-blue-600"><Markdown>{data?.suggestions || 'We do not have any suggestions for you on this day yet..'}</Markdown></p>
             </div>
 
             <div className="bg-blue-50 shadow-md rounded-lg p-4 transition-transform transform hover:scale-105 mb-4">
-                <h3 className="text-xl font-semibold mb-2">Most Visited Link</h3>
-                <p className="text-3xl font-bold text-blue-600">Link Title 4 (4 times)</p>
+                <h3 className="text-xl font-semibold mb-2">Insights</h3>
+                <p className="text-sm font-bold text-blue-600"><Markdown>{data?.insights || 'We do not have any insights for you on this day yet..'}</Markdown></p>
             </div>
 
-            <div className="bg-blue-50 shadow-md rounded-lg p-4 transition-transform transform hover:scale-105 mb-4">
-                <h3 className="text-xl font-semibold mb-2">Average Visits per Link</h3>
-                <p className="text-3xl font-bold text-blue-600">2.0</p>
-            </div>
+            
         </div>
     )
 }

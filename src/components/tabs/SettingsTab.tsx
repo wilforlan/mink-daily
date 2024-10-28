@@ -2,7 +2,7 @@ import { sendToBackground } from "@plasmohq/messaging";
 import SettingOption from "../SettingOption"
 import { useEffect, useState } from "react";
 
-export default function SettingsTab() {
+export default function SettingsTab({ data }: { data: any }) {
   const [settings, setSettings] = useState(null);
   const [error, setError] = useState(null);
 
@@ -70,6 +70,10 @@ export default function SettingsTab() {
             {
               label: "Immediately",
               value: 0
+            },
+            {
+              label: "Never",
+              value: 'never'
             }
             ]}
           />
@@ -94,6 +98,10 @@ export default function SettingsTab() {
               {
                 label: "24 hours",
                 value: 24
+              },
+              {
+                label: "Never",
+                value: 'never'
               }
             ]}
           />

@@ -1,6 +1,7 @@
 import type { LocalStorageService } from "../local-storage.service";
 import type { UserService } from "../user.service";
 import { CreateSummerizationAndInsights } from "./tasks";
+import { DataRetentionPolicyJob } from "./tasks/data-retention-policy-job";
 
 enum TaskName {
     SUMMARIZATION_AND_INSIGHTS = 'SUMMARIZATION_AND_INSIGHTS',
@@ -58,6 +59,12 @@ export class QueueService {
     async createSummarizationJob() {
         const executor = new CreateSummerizationAndInsights();
         const settings = await this.localStorageService.get('settings');
+        if (
+            !settings.options.executeSummariesAfter ||
+            settings.options.executeSummariesAfter === 0 ||
+            settings.options.executeSummariesAfter === 'never'
+        ) return console.log('Summarization job not created because it is disabled', { executeSummariesAfter: settings.options.executeSummariesAfter });
+
         return this.addTask({
             name: TaskName.SUMMARIZATION_AND_INSIGHTS,
             data: {},
@@ -72,7 +79,15 @@ export class QueueService {
     }
 
     async createDataRetentionPolicyCleanupJob() {
+        const executor = new DataRetentionPolicyJob();
         const settings = await this.localStorageService.get('settings');
+
+        if (
+            !settings.options.deleteDataEvery ||
+            settings.options.deleteDataEvery === 0 ||
+            settings.options.deleteDataEvery === 'never'
+        ) return console.log('Data clean up job not created because it is disabled', { executeSummariesAfter: settings.options.executeSummariesAfter });
+
         return this.addTask({
             name: TaskName.DATA_RETENTION_POLICY_CLEANUP,
             data: {},
@@ -80,9 +95,7 @@ export class QueueService {
             interval: settings.options.deleteDataEvery * 60 * 60 * 1000,
             createdAt: Date.now(),
             updatedAt: Date.now(),
-            execute: async () => {
-                console.log('Cleaning up data retention policy', settings);
-            }
+            execute: executor.do
         });
     }
 

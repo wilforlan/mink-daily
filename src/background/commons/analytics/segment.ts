@@ -68,8 +68,9 @@ const Analytics = (key: string) => {
 
   const track = async (event: string, properties: UnknownType): Promise<void> => {
     const url = `https://api.segment.io/v1/track`;
+    const anonId = randomString();
     const data = {
-      ...(user ? { userId: user.userId } : { anonymousId: anonId }),
+      ...(user ? { userId: properties.email || user.userId } : { anonymousId: anonId }),
       event,
       properties: { ...properties, version },
       context: await getContext(),
