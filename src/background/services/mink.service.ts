@@ -114,4 +114,51 @@ export class MinkService {
             return null;
         }
     }
+
+    async getNotifications() {
+        return this.databaseService.db.Notifications.where('isRead').equals('false').toArray();
+    }
+
+    async markNotificationAsRead(notificationId: string) {
+        // delete notification
+        await this.databaseService.db.Notifications.delete(notificationId);
+        return { status: true };
+    }
+
+    async createNotification(notification: any) {
+        await this.databaseService.db.Notifications.put(notification);
+        return { status: true };
+    }
+
+    async getDailyMinkStats() {
+        try {
+            // Get start of day timestamp
+            const startDate = new Date();
+            startDate.setHours(0, 0, 0, 0);
+            const startTs = startDate.getTime();
+
+            // Get end of day timestamp
+            const endDate = new Date();
+            endDate.setHours(23, 59, 59, 999);
+            const endTs = endDate.getTime();
+
+            const pageData = await this.databaseService.db.PageData
+                .where('createAtTs')
+                .between(startTs, endTs)
+                .reverse() // Get most recent first
+                .toArray();
+
+            if (!pageData || pageData.length === 0) {
+                return null;
+            }
+
+            return {
+                total_pages_visited: pageData.length,
+                total_unique_pages_visited: new Set(pageData.map((page: any) => page.url)).size,
+            }
+        } catch (error) {
+            console.error('Error getting summary:', error);
+            return null;
+        }
+    }
 }

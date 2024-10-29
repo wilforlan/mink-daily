@@ -42,6 +42,17 @@ interface PageData {
   isProcessed: string;
 }
 
+interface Notification {
+  id: string;
+  notificationId: string;
+  title: string;
+  body: string;
+  endTime: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  isRead: string;
+}
+
 export class Database extends Dexie {
   public PageData!: Table<PageData>;
 
@@ -49,13 +60,15 @@ export class Database extends Dexie {
 
   public ChatMessages!: Table<ChatMessages>;
 
+  public Notifications!: Table<Notification>;
+
   constructor() {
     super('mink-db');
     this.version(5).stores({
       SummaryResults: '++id, summary, analytics, insights, suggestions, createdAt, updatedAt, createAtTs, updatedAtTs, cost',
       ChatMessages: '++id, role, content, createdAt, updatedAt',
       PageData: '++id, title, url, content, description, isProcessed, createdAt, updatedAt, origin, contentSummary',
-      shownNotifications: '++id, notificationId, endTime, createdAt, updatedAt',
+      Notifications: '++id, notificationId, title, body, endTime, createdAt, updatedAt, isRead',
     });
   }
 }
