@@ -105,6 +105,7 @@ export class MinkService {
                 return null;
             }
 
+            console.log(summaries);
             await analyticsTrack(SegmentAnalyticsEvents.USER_FETCHED_SUMMARY, {
                 totalSummaries: summaries.length,
                 date,
