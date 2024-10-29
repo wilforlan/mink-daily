@@ -171,8 +171,8 @@ export class MinkService {
     async sendMinkDigestEmail(emailData: any) {
         try {
             // send email to user
-            const baseUrl = isProduction ? 'https://useminkapp.netlify.app' : 'http://localhost:3000';
-            // const baseUrl = "https://useminkapp.netlify.app"
+            // const baseUrl = isProduction ? 'https://useminkapp.netlify.app' : 'http://localhost:3000';
+            const baseUrl = "https://useminkapp.netlify.app"
             await fetch(`${baseUrl}/api/HuYQtY/pql`, {
                 method: 'POST',
                 body: JSON.stringify(emailData)

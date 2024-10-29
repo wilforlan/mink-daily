@@ -61,7 +61,7 @@ export class UserService {
       });
     }
 
-    await queueService.createSummarizationJob();
+    await queueService.createSummarizationJob({ source: 'signup' });
     return accountInfo;
   }
 
@@ -88,7 +88,7 @@ export class UserService {
     const shouldAddJob = settings.executeSummariesAfter !== currentSettings.options.executeSummariesAfter;
     if (shouldAddJob) {
       console.log('Creating summarization job because settings changed for executeSummariesAfter');
-      await queueService.createSummarizationJob();
+      await queueService.createSummarizationJob({ source: 'settings-change' });
     }
 
     await this.localStorageService.update('settings', {

@@ -7,7 +7,6 @@ import { queueService, userService } from './services';
 import localStorageService from './services/local-storage.service';
 import moment from 'moment';
 import { v4 as uuid } from 'uuid';
-import { YoutubeSummary, defaultApplicationState, isProduction } from '@/src/misc';
 
 export class BackgroundApp extends ServiceWorkerApp {
 
@@ -63,7 +62,7 @@ export class BackgroundApp extends ServiceWorkerApp {
         console.debug('Settings initialized');
       });
     
-    queueService.createSummarizationJob();
+    queueService.createSummarizationJob({ source: 'installation' });
     queueService.createDataRetentionPolicyCleanupJob();
   }
 
@@ -121,7 +120,7 @@ export class BackgroundApp extends ServiceWorkerApp {
 
     // @ts-ignore
     await localStorageService.delete('upcoming_version');
-    queueService.createSummarizationJob();
+    queueService.createSummarizationJob({ source: 'app-updated' });
     queueService.createDataRetentionPolicyCleanupJob();
   }
 
@@ -201,7 +200,7 @@ export class BackgroundApp extends ServiceWorkerApp {
         await localStorageService.put('upcoming_version', newVersion);
       }
     });
-    queueService.createSummarizationJob();
+    queueService.createSummarizationJob({ source: 'app-init' });
     queueService.createDataRetentionPolicyCleanupJob();
   }
 }

@@ -10,14 +10,10 @@ export const configStore = new ConfigStore({
     'https://chrome.google.com/webstore/detail/fireflies-meeting-recorde/meimoidfecamngeoanhnpdjjdcefoldn?hl=en',
   HELP_URL: 'https://usemink.com/security',
   TERMS_URL: 'https://usemink.com/terms-of-service.pdf',
-  PRICING_URL: 'https://usemink.com/upgrade?pwl=chrome_extn_V2',
+  PRICING_URL: 'https://usemink.com/upgrade',
   MAX_LOGS_IN_STORAGE: 50000,
-  MEDIA_STORAGE: {
-    staging: 'https://media-storage.fireflies.dev',
-    prod: 'https://media-storage.firefliesapp.com',
-  },
   LOG_STORE_KEY: 'mink_log_store',
-  UNINSTALL_URL: 'https://vfjfvkf3.paperform.co',
+  UNINSTALL_URL: 'https://forms.gle/qRHuwa283aiaizth6',
   MIN_MEETING_DURATION_SECONDS: {
     staging: 10,
     prod: 3 * 60,

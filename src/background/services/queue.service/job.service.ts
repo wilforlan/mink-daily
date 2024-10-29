@@ -11,11 +11,12 @@ enum TaskName {
 interface IJob {
     name: TaskName.SUMMARIZATION_AND_INSIGHTS | TaskName.DATA_RETENTION_POLICY_CLEANUP;
     data: any;
-    type: 'oneoff' | 'recurring';
+    type: string;
     interval: number;
     createdAt: number;
     updatedAt: number;
     execute: (...args: any) => Promise<any>;
+    nextExecution: number;
 }
 
 export class QueueService {
@@ -37,22 +38,30 @@ export class QueueService {
         this.stop(job.name);
 
         this.taskData[job.name] = job;
-        
-        const caller = job.type === 'oneoff' ? setTimeout : setInterval;
 
-        const pointer = caller(async () => {
+        const timeUntilNextExecution = job.nextExecution - Date.now();
+
+        const pointer = setTimeout(async () => {
             try {
                 await job.execute(job.data);
+                job.nextExecution = job.nextExecution + job.interval;
+                this.localStorageService.put(
+                    `tasks-${job.name}`,
+                    job
+                );
+                this.addTask(job);
             } catch (error: any) {
                 console.error("error executing job", error, job);
             }
-        }, job.interval);
+        }, timeUntilNextExecution);
 
         this.tasks[job.name] = pointer;
+
+
         return pointer;
     }
 
-    async createSummarizationJob() {
+    async createSummarizationJob({ source }: { source: string }) {
         const executor = new CreateSummerizationAndInsights();
         const settings = await this.localStorageService.get('settings');
         if (
@@ -61,17 +70,40 @@ export class QueueService {
             settings.options.executeSummariesAfter === 'never'
         ) return console.log('Summarization job not created because it is disabled', { executeSummariesAfter: settings.options.executeSummariesAfter });
 
-        return this.addTask({
+        const isSettingsChange = source === 'settings-change';
+        const cacheTaskId = `tasks-${TaskName.SUMMARIZATION_AND_INSIGHTS}`;
+        const cacheTask = await this.localStorageService.get(cacheTaskId);
+        const hasPointer = this.tasks[TaskName.SUMMARIZATION_AND_INSIGHTS];
+
+        // const interval = settings.options.executeSummariesAfter * 60 * 60 * 1000;
+        const interval = 60 * 1000 // 1 min
+        const isNextExecutionInThePast = cacheTask?.nextExecution && Date.now() > cacheTask.nextExecution
+        const nextExecution = isNextExecutionInThePast ? Date.now() + interval : cacheTask?.nextExecution || Date.now() + interval;
+
+        const taskObject = cacheTask || {
             name: TaskName.SUMMARIZATION_AND_INSIGHTS,
             data: {},
             type: 'recurring',
             // TODO: update this
-            interval: settings.options.executeSummariesAfter * 60 * 60 * 1000,
-            // interval: 60 * 1000, // 1 minute
+            // interval: settings.options.executeSummariesAfter * 60 * 60 * 1000,
+            interval,
             createdAt: Date.now(),
             updatedAt: Date.now(),
-            execute: executor.do
+            nextExecution
+        };
+
+        this.localStorageService.put(
+            cacheTaskId,
+            taskObject
+        );
+
+        this.addTask({
+            ...taskObject,
+            execute: executor.do,
         });
+
+        console.log('Summarization job created', taskObject);
+        return taskObject;
     }
 
     async createDataRetentionPolicyCleanupJob() {
@@ -82,22 +114,39 @@ export class QueueService {
             !settings.options.deleteDataEvery ||
             settings.options.deleteDataEvery === 0 ||
             settings.options.deleteDataEvery === 'never'
-        ) return console.log('Data clean up job not created because it is disabled', { executeSummariesAfter: settings.options.executeSummariesAfter });
+        ) return console.log('Data clean up job not created because it is disabled', { deleteDataEvery: settings.options.deleteDataEvery });
 
-        return this.addTask({
+        const cacheTaskId = `tasks-${TaskName.DATA_RETENTION_POLICY_CLEANUP}`;
+        const cacheTask = await this.localStorageService.get(cacheTaskId);
+
+        const interval = settings.options.deleteDataEvery * 60 * 60 * 1000;
+        const isNextExecutionInThePast = cacheTask?.nextExecution && Date.now() > cacheTask.nextExecution
+        const nextExecution = isNextExecutionInThePast ? Date.now() + interval : cacheTask?.nextExecution || Date.now() + interval;
+
+        const taskObject = cacheTask || {
             name: TaskName.DATA_RETENTION_POLICY_CLEANUP,
             data: {},
             type: 'recurring',
-            interval: settings.options.deleteDataEvery * 60 * 60 * 1000,
+            interval,
             createdAt: Date.now(),
             updatedAt: Date.now(),
+            nextExecution
+        };
+
+        this.localStorageService.put(
+            cacheTaskId,
+            taskObject
+        );
+
+        return this.addTask({
+            ...taskObject,
             execute: executor.do
         });
     }
 
     stop(name: string) {
         if (this.tasks[name]) {
-            clearInterval(this.tasks[name]);
+            clearTimeout(this.tasks[name]);
             delete this.tasks[name];
             delete this.taskData[name];
         }
