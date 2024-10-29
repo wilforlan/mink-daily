@@ -75,8 +75,8 @@ export class QueueService {
         const cacheTask = await this.localStorageService.get(cacheTaskId);
         const hasPointer = this.tasks[TaskName.SUMMARIZATION_AND_INSIGHTS];
 
-        // const interval = settings.options.executeSummariesAfter * 60 * 60 * 1000;
-        const interval = 60 * 1000 // 1 min
+        const interval = settings.options.executeSummariesAfter * 60 * 60 * 1000;
+        // const interval = 60 * 1000 // 1 min
         const isNextExecutionInThePast = cacheTask?.nextExecution && Date.now() > cacheTask.nextExecution
         const nextExecution = isNextExecutionInThePast ? Date.now() + interval : cacheTask?.nextExecution || Date.now() + interval;
 
@@ -85,7 +85,6 @@ export class QueueService {
             data: {},
             type: 'recurring',
             // TODO: update this
-            // interval: settings.options.executeSummariesAfter * 60 * 60 * 1000,
             interval,
             createdAt: Date.now(),
             updatedAt: Date.now(),

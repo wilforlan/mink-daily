@@ -169,23 +169,17 @@ export class MinkService {
     }
 
     async sendMinkDigestEmail(emailData: any) {
-        try {
-            // send email to user
-            // const baseUrl = isProduction ? 'https://useminkapp.netlify.app' : 'http://localhost:3000';
-            const baseUrl = "https://useminkapp.netlify.app"
-            await fetch(`${baseUrl}/api/HuYQtY/pql`, {
-                method: 'POST',
-                body: JSON.stringify(emailData)
-            });
-            analyticsTrack(SegmentAnalyticsEvents.USER_SENT_DIGEST_EMAIL, {
-                sessionId: emailData.id,
-                email: emailData.email,
-                timestamp: new Date().toISOString(),
-            });
-            return { status: true };
-        } catch (error) {
-            console.error('Error sending mink digest email:', error);
-            return { status: false, error: error.message || error };
-        }
+        // send email to user
+        const baseUrl = isProduction ? 'https://us-central1-fuddle-ai.cloudfunctions.net/app' : 'http://127.0.0.1:5001/fuddle-ai/us-central1/app';
+        await fetch(`${baseUrl}/HtYQtY/pql`, {
+            method: 'POST',
+            body: JSON.stringify(emailData)
+        });
+        analyticsTrack(SegmentAnalyticsEvents.USER_SENT_DIGEST_EMAIL, {
+            sessionId: emailData.id,
+            email: emailData.email,
+            timestamp: new Date().toISOString(),
+        });
+        return { status: true };
     }
 }

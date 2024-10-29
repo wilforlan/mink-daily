@@ -32,7 +32,9 @@ export class CreateSummerizationAndInsights extends Task<string> {
         timestamp: new Date().toISOString(),
       });
 
-      const AiInput = pages.map((page) => (
+      const AiInput = pages
+      .filter((page) => page.content.length > 0 && page.title.length > 0)
+      .map((page) => (
         `
           Full Link: ${page.url} \n \n
           Title: ${page.title} \n \n
@@ -68,6 +70,7 @@ export class CreateSummerizationAndInsights extends Task<string> {
       };
 
     } catch (error) {
+      console.log("error in create-summerization-and-insights");
       console.error(error);
     }
   }
