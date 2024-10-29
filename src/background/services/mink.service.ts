@@ -43,6 +43,8 @@ export class MinkService {
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 isProcessed: "false",
+                createAtTs: Date.now(),
+                updatedAtTs: Date.now(),
             };
             await this.databaseService.db.PageData.put(
                 input,
@@ -130,7 +132,7 @@ export class MinkService {
         return { status: true };
     }
 
-    async getDailyMinkStats() {
+    async getDailyMinkStats(url: string) {
         try {
             // Get start of day timestamp
             const startDate = new Date();
@@ -148,16 +150,13 @@ export class MinkService {
                 .reverse() // Get most recent first
                 .toArray();
 
-            if (!pageData || pageData.length === 0) {
-                return null;
-            }
-
             return {
                 total_pages_visited: pageData.length,
                 total_unique_pages_visited: new Set(pageData.map((page: any) => page.url)).size,
+                current_page_tracked: pageData.some((page: any) => page.url === url)
             }
         } catch (error) {
-            console.error('Error getting summary:', error);
+            console.error('Error getting daily mink stats:', error);
             return null;
         }
     }

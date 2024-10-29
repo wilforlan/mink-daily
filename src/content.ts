@@ -3,9 +3,12 @@ import React, { useEffect, useState } from "react";
 const EXTENSION_ID = "caijdklfefngnfplclccpilllnbglbjh";
 import icon from "data-base64:~content-assets/icon.png"
 
+export {}
+
 export const getShadowHostId = () => "mink-daily-notification"
 import styleText from "data-text:./style.css" 
 import type { PlasmoCSConfig } from "plasmo"
+import { isProduction } from "./misc";
  
 export const config: PlasmoCSConfig = {
   matches: ["<all_urls>"],
@@ -57,7 +60,7 @@ class ContentApp {
 
     private async trySendPageContent() {
         const {startTrackingSessionAfter, maxAllowedLinksPerDay} = this.settings.options;
-        if (startTrackingSessionAfter === 'never' || startTrackingSessionAfter <= 0) {
+        if (startTrackingSessionAfter === 'never') {
             console.log("Mink is disabled on this page");
             return;
         }
@@ -67,11 +70,11 @@ class ContentApp {
             return;
         }
 
-        const getDailyMinkStats = async () => {
+        const getDailyMinkStats = async (url: string) => {
             const { status, stats } = await sendToBackground({
                 extensionId: EXTENSION_ID,
                 name: "get-daily-mink-stats",
-                body: {},
+                body: { url },
             });
 
             if (!status) throw new Error("Failed to get daily mink stats");
@@ -79,14 +82,19 @@ class ContentApp {
         }
 
         if (maxAllowedLinksPerDay > 0) {
-            const dailyMinkStats = await getDailyMinkStats();
-            if (dailyMinkStats.total_pages_visited >= maxAllowedLinksPerDay) {
-                console.log("Mink is disabled because you have reached the max allowed links per day");
+            const dailyMinkStats = await getDailyMinkStats(window.location.href);
+            if (dailyMinkStats.total_unique_pages_visited >= maxAllowedLinksPerDay) {
+                if (!isProduction) console.log("Mink is disabled because you have reached the max allowed links per day");
+                return;
+            }
+
+            if (dailyMinkStats.current_page_tracked) {
+                if (!isProduction) console.log("Mink is disabled because you have already tracked this page today");
                 return;
             }
         }
         
-        setTimeout(async () => {
+        const sendData = async () => {
             const pageContent = extractPageContent();
             // console.log(`***Mink: I just tracked your session, open mink to disable.***`);
             await sendToBackground({
@@ -94,7 +102,15 @@ class ContentApp {
                 name: "track-webpage-session",
                 body: pageContent,
             });
-        }, startTrackingSessionAfter * 60 * 1000);
+        }
+
+        if (startTrackingSessionAfter > 0) {
+            setTimeout(async () => {
+                await sendData();
+            }, startTrackingSessionAfter * 60 * 1000);
+        } else {
+            await sendData();
+        }
     }
 }
 

@@ -70,8 +70,8 @@ export class QueueService {
             data: {},
             type: 'recurring',
             // TODO: update this
-            // interval: settings.options.executeSummariesAfter * 60 * 60 * 1000,
-            interval: 60 * 1000, // 1 minute
+            interval: settings.options.executeSummariesAfter * 60 * 60 * 1000,
+            // interval: 60 * 1000, // 1 minute
             createdAt: Date.now(),
             updatedAt: Date.now(),
             execute: executor.do

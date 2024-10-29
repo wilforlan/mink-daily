@@ -1,4 +1,3 @@
-import { AllowedOrigins, MeetRegex } from './constants';
 // @ts-ignore
 import type { PlasmoGetStyle } from 'plasmo';
 
@@ -47,25 +46,3 @@ export const sleepFor = (ms: number) =>
     setTimeout(resolve, ms);
   });
 
-
-export const isMeetUrl = (url?: string): boolean => {
-  if (!url) return false;
-  try {
-    const { origin, pathname } = new URL(url?.toLowerCase() || window.location.href);
-
-    /** if domain isn't same and meetLinkParts are not 3 */
-    const meetLinkParts = pathname.split('-');
-
-    const isDomainSame = origin === AllowedOrigins.GMEET;
-    if (!isDomainSame || meetLinkParts.length !== 3) return false;
-
-    /** extract 3 elements and cut it 3 4 3 length respectively */
-    const [first, second, last] = meetLinkParts;
-    if (first.length !== 4 || second.length !== 4 || last.length !== 3) return false;
-
-    /** verify the updated path with regex */
-    return MeetRegex.test(origin + pathname);
-  } catch (e) {
-    return false;
-  }
-};

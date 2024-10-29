@@ -40,6 +40,8 @@ interface PageData {
   origin: string;
   contentSummary: string; // maybe or maybe not used,
   isProcessed: string;
+  createAtTs: number;
+  updatedAtTs: number;
 }
 
 interface Notification {
@@ -67,7 +69,7 @@ export class Database extends Dexie {
     this.version(5).stores({
       SummaryResults: '++id, summary, analytics, insights, suggestions, createdAt, updatedAt, createAtTs, updatedAtTs, cost',
       ChatMessages: '++id, role, content, createdAt, updatedAt',
-      PageData: '++id, title, url, content, description, isProcessed, createdAt, updatedAt, origin, contentSummary',
+      PageData: '++id, title, url, content, description, isProcessed, createdAt, updatedAt, origin, contentSummary, createAtTs, updatedAtTs',
       Notifications: '++id, notificationId, title, body, endTime, createdAt, updatedAt, isRead',
     });
   }
