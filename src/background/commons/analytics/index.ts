@@ -15,10 +15,14 @@ export enum SegmentAnalyticsEvents {
   SUMMARIZATION_COMPLETE = 'Summarization Complete - Chrome Extension',
   SUMMARIZATION_FAILED = 'Summarization Failed - Chrome Extension',
   SUMMARIZATION_STARTED = 'Summarization Started - Chrome Extension',
+  LLM_SUMMARIZATION_FAILED_WITH_RETRY = 'Summarization Failed With Retry - Chrome Extension',
+  LLM_SUMMARIZATION_STARTED = 'LLM Summarization Started - Chrome Extension',
+  LLM_SUMMARIZATION_FAILED = 'LLM Summarization Failed - Chrome Extension',
   USER_FETCHED_SUMMARY = 'User Fetched Summary - Chrome Extension',
   SETTINGS_UPDATED = 'Settings Updated - Chrome Extension',
   WEB_PAGE_SESSION_SAVED = 'Web Page Session Saved - Chrome Extension',
   DATA_RETENTION_POLICY_CLEANUP = 'Data Retention Policy Cleanup - Chrome Extension',
+  USER_SENT_DIGEST_EMAIL = 'User Sent Digest Email - Chrome Extension',
 }
 
 const updateIdentity = async () => {

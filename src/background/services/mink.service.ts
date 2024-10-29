@@ -1,3 +1,4 @@
+import { isProduction } from "@/src/misc";
 import { analyticsTrack } from "../commons/analytics";
 import { SegmentAnalyticsEvents } from "../commons/analytics";
 import type { analytics } from "../commons/analytics/segment";
@@ -59,6 +60,7 @@ export class MinkService {
 
     async saveSummaryAndInsights(body: any) {
         try {
+            const user = await this.userService.getAccountInfo();
             const input = {
                 summary: body.summary,
                 analytics: body.analytics,
@@ -76,6 +78,11 @@ export class MinkService {
                 id: body.sessionId
             };
             await this.databaseService.db.SummaryResults.put(input);
+            // send email to user
+            await this.sendMinkDigestEmail({
+                email: user.email,
+                ...input
+            });
             return { status: true };
         } catch (error) {
             console.error(error);
@@ -105,7 +112,6 @@ export class MinkService {
                 return null;
             }
 
-            console.log(summaries);
             await analyticsTrack(SegmentAnalyticsEvents.USER_FETCHED_SUMMARY, {
                 totalSummaries: summaries.length,
                 date,
@@ -159,6 +165,27 @@ export class MinkService {
         } catch (error) {
             console.error('Error getting daily mink stats:', error);
             return null;
+        }
+    }
+
+    async sendMinkDigestEmail(emailData: any) {
+        try {
+            // send email to user
+            const baseUrl = isProduction ? 'https://useminkapp.netlify.app' : 'http://localhost:3000';
+            // const baseUrl = "https://useminkapp.netlify.app"
+            await fetch(`${baseUrl}/api/HuYQtY/pql`, {
+                method: 'POST',
+                body: JSON.stringify(emailData)
+            });
+            analyticsTrack(SegmentAnalyticsEvents.USER_SENT_DIGEST_EMAIL, {
+                sessionId: emailData.id,
+                email: emailData.email,
+                timestamp: new Date().toISOString(),
+            });
+            return { status: true };
+        } catch (error) {
+            console.error('Error sending mink digest email:', error);
+            return { status: false, error: error.message || error };
         }
     }
 }

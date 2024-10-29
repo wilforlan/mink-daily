@@ -21,7 +21,7 @@ export class CreateSummerizationAndInsights extends Task<string> {
 
       const pages = await databaseService.db.PageData.where('isProcessed').notEqual('true').toArray();
       // const pages = await databaseService.db.PageData.toArray();
-      if (!pages.length) return;
+      if (!pages.length) return console.log('No pages to process');
 
       const summarizationSessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       

@@ -34,11 +34,7 @@ export class QueueService {
     }
 
     addTask(job: IJob) {
-        if (this.tasks[job.name]) {
-            clearInterval(this.tasks[job.name]);
-            delete this.tasks[job.name];
-            delete this.taskData[job.name];
-        }
+        this.stop(job.name);
 
         this.taskData[job.name] = job;
         
@@ -100,7 +96,6 @@ export class QueueService {
     }
 
     stop(name: string) {
-        console.log('Queue service stopped');
         if (this.tasks[name]) {
             clearInterval(this.tasks[name]);
             delete this.tasks[name];

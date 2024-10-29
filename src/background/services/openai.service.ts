@@ -13,19 +13,19 @@ From my attachments, message history and your memory, generate summaries, analyt
 Keep your response in strictly JSON format using the following schema include double new lines to make paragraphs and single new lines to sentences.
 
 {
-  "summary": "Make this really long, well formatted and feel free to use emojis and markdown formatting. This should be a really long narrative summary of what have done since the all through out my browsing and internet history.  include double new lines to make paragraphs and single new lines to sentences.",
-  "insights": "Very meaningful insights to help me work better and stay ahead of the competition.  include double new lines to make paragraphs and single new lines to sentences.",
-  "suggestions": "Suggestions to help me improve my work and productivity and shortcuts I can take to help me work faster (DO NOT INCLUDE THE WORD SHORTCUTS IN YOUR RESPONSE) Make this really long, well formatted and feel free to use emojis and markdown formatting and include double new lines to make paragraphs and single new lines to sentences.",
+  "summary": "This should never be empty and Make this really long, well formatted and feel free to use emojis and markdown formatting. This should be a really long narrative summary of what have done since the all through out my browsing and internet history.  include double new lines to make paragraphs and single new lines to sentences.",
+  "insights": "This should never be empty and Very meaningful insights to help me work better and stay ahead of the competition.  include double new lines to make paragraphs and single new lines to sentences.",
+  "suggestions": "This should never be empty and Suggestions to help me improve my work and productivity and shortcuts I can take to help me work faster (DO NOT INCLUDE THE WORD SHORTCUTS IN YOUR RESPONSE) Make this really long, well formatted and feel free to use emojis and markdown formatting and include double new lines to make paragraphs and single new lines to sentences.",
   "analytics": {
     "most_visited_link": {
-      "title": "The title of the most visited link",
-      "url": "https://www.example.com",
-      "count": 5
+      "title": "The title of the most visited link, make sure this is a valid link title from the content provided",
+      "url": "https://www.example.com, ## make sure this is a valid link from the content provided",
+      "count": 5 ## make sure this is a number from the content provided
     },
-    "average_time_spent_browing": "The average time spent browsing the web in hours",
-    "topics_covered": ["Topic 1", "Topic 2", "Topic 3"], // List of top 5 topics covered in the content
+    "average_time_spent_browing": "The average time spent browsing the web in hours, make sure this is a number from the content provided",
+    "topics_covered": ["Topic 1", "Topic 2", "Topic 3"], // List of top 5 topics covered in the content, make sure this is a list of topics from the content provided
     "additional_insights": [
-      "A list of 5 - 10 bullet points of additional insights you may have based on the content provided",
+      "A list of 5 - 10 bullet points of additional insights you may have based on the content provided, make sure this is a list of insights from the content provided",
       "For example:",
         - Links related to technology were visited the most.
         - Highest engagement time was on Link Title 1.
@@ -40,6 +40,8 @@ Keep your response in strictly JSON format using the following schema include do
 }
 
 Do not include the word JSON in your response or \`\`\`json\`\`\` markdown in your response. It should be a valid JSON object.
+None of the fields should be empty and follow the description provided in the schema and make sure to use the correct values from the content you have been provided with. Failure to do so will result in a penalty.
+Don't every fail to provide JSON response, always do with the information provided.
 `;
 
 
@@ -50,6 +52,7 @@ const INSTRUCTIONS = `
     Your goal is to help monitor your users' daily internet activities and provide them with useful information.
 
     You need to ensure that these insights are super accurate, helpful and relevant to your users' daily activities.
+    For everytime you send the wrong data, a baby dies and cannot be brought back! So be wise and make sure to follow the instructions provided.
 `
 
 export const ParseJson = (string: string) => {
@@ -161,6 +164,29 @@ class OpenAIService {
         this.tokenizer = new Tokenizer();
     }
 
+    async getChatCompletionWithRetry(
+        messages: { role: string, content: string }[],
+        apiKey?: string,
+        retries: number = 5
+    ): Promise<{ completion: string, cost: Cost }> {
+        try {
+            return await this.getChatCompletion(messages, apiKey);
+        } catch (error) {
+            if (retries === 0) {
+                await analyticsTrack(SegmentAnalyticsEvents.LLM_SUMMARIZATION_FAILED, {
+                    error: error.message,
+                    timestamp: new Date().toISOString(),
+                });
+                throw new Error(`Failed to get chat completion after ${retries} retries: ${error.message}`);
+            }
+            await analyticsTrack(SegmentAnalyticsEvents.LLM_SUMMARIZATION_FAILED_WITH_RETRY, {
+                error: error.message,
+                timestamp: new Date().toISOString(),
+            });
+            return this.getChatCompletionWithRetry(messages, apiKey, retries - 1);
+        }
+    }
+
     async getChatCompletion(
         messages: { role: string, content: string }[],
         apiKey?: string
@@ -207,8 +233,7 @@ class OpenAIService {
         apiKey?: string
     ): Promise<{ result: any, cost: Cost }> {
         const chunkedResults = await this.getSummaryAndInsightsWithChunking(text, sessionId, apiKey);
-
-        const chunkedResultsString = chunkedResults.join("\n\n");
+        const chunkedResultsString = chunkedResults.map((chunk) => chunk.completion).join("\n\n");
 
         const responder = `
             Your output has been chunked into smaller parts for better processing.
@@ -225,7 +250,7 @@ class OpenAIService {
             { role: 'system', content: INSTRUCTIONS },
             { role: 'user', content: responder }
         ];
-        const {completion, cost} = await this.getChatCompletion(messages, apiKey);
+        const {completion, cost} = await this.getChatCompletionWithRetry(messages, apiKey);
         return {
             result: ParseJson(completion),
             cost
@@ -247,7 +272,7 @@ class OpenAIService {
                 100000
             ));
 
-            await analyticsTrack(SegmentAnalyticsEvents.SUMMARIZATION_STARTED, {
+            await analyticsTrack(SegmentAnalyticsEvents.LLM_SUMMARIZATION_STARTED, {
                 sessionId,
                 totalChunks: chunks.length,
                 timestamp: new Date().toISOString(),
@@ -260,7 +285,7 @@ class OpenAIService {
                     { role: 'user', content: chunk },
                     { role: 'user', content: responsePrompt }
                 ];
-                return await this.getChatCompletion(messages, key);
+                return await this.getChatCompletionWithRetry(messages, key);
             });
 
             return await Promise.all(executor);
@@ -272,7 +297,7 @@ class OpenAIService {
     public async testChatApiKey(apiKey: string): Promise<boolean> {
         try {
             const testMessages = [{ role: 'user', content: 'Say hello world' }];
-            const { completion } = await this.getChatCompletion(testMessages, apiKey);
+            const { completion } = await this.getChatCompletionWithRetry(testMessages, apiKey);
             return !!completion;
         } catch (error) {
             return false;
