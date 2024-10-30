@@ -11,12 +11,12 @@ function SuggestionTab({ data }: { data: any }) {
             </div>
             <div className="bg-blue-50 shadow-md rounded-lg p-4 mb-4">
                 <h3 className="text-xl font-semibold mb-2">Suggestions</h3>
-                <p className="text-sm font-bold text-blue-600"><Markdown>{data?.suggestions || 'We do not have any suggestions for you on this day yet..'}</Markdown></p>
+                <p className="text-sm font-bold text-blue-600"><Markdown>{data?.suggestions || 'We do not have any suggestions for you on this day yet. In a couple of hours, you\'ll see some suggestions.'}</Markdown></p>
             </div>
 
             <div className="bg-blue-50 shadow-md rounded-lg p-4 mb-4">
                 <h3 className="text-xl font-semibold mb-2">Insights</h3>
-                <p className="text-sm font-bold text-blue-600"><Markdown>{data?.insights || 'We do not have any insights for you on this day yet..'}</Markdown></p>
+                <p className="text-sm font-bold text-blue-600"><Markdown>{data?.insights || 'We do not have any insights for you on this day yet. The more you browse, the more insights we\'ll have.'}</Markdown></p>
             </div>
 
             

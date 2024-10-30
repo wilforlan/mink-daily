@@ -1,8 +1,9 @@
 import { sendToBackground } from "@plasmohq/messaging";
 import React, { useEffect, useState } from "react";
-const EXTENSION_ID = "caijdklfefngnfplclccpilllnbglbjh";
+const EXTENSION_ID = chrome.runtime.id;
 import icon from "data-base64:~content-assets/icon.png"
 
+console.log('EXTENSION_ID', EXTENSION_ID);
 export {}
 
 export const getShadowHostId = () => "mink-daily-notification"

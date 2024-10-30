@@ -10,7 +10,7 @@ function SummaryTab({ data }: { data: any }) {
                 </p>
             </div>
             <p className="text-gray-700 mb-2 text-lg">
-                <Markdown>{data?.summary || 'We do not have any summary for you on this day yet..'}</Markdown>
+                <Markdown>{data?.summary || 'We do not have any summary for you on this day yet. Wait a couple of hours to see the magic happen.'}</Markdown>
             </p>
         </div>
     )

@@ -4,8 +4,6 @@ import { sendToBackground } from "@plasmohq/messaging"
 import React from "react"
 import { useUser } from "../providers/user.provider"
 
-const extensionId = process.env.PLASMO_PUBLIC_EXTENSION_ID
-
 function AddAccountInfo() {
     const [email, setEmail] = React.useState("")
     const [apiKey, setApiKey] = React.useState("")

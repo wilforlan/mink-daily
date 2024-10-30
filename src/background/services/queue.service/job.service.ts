@@ -61,21 +61,21 @@ export class QueueService {
         return pointer;
     }
 
-    async createSummarizationJob({ source }: { source: string }) {
+    async createSummarizationJob({ source, updatedSettings }: { source: string, updatedSettings?: any }) {
         const executor = new CreateSummerizationAndInsights();
-        const settings = await this.localStorageService.get('settings');
+        const settings = updatedSettings || (await this.localStorageService.get('settings'))?.options;
         if (
-            !settings.options.executeSummariesAfter ||
-            settings.options.executeSummariesAfter === 0 ||
-            settings.options.executeSummariesAfter === 'never'
-        ) return console.log('Summarization job not created because it is disabled', { executeSummariesAfter: settings.options.executeSummariesAfter });
+            !settings.executeSummariesAfter ||
+            settings.executeSummariesAfter === 0 ||
+            settings.executeSummariesAfter === 'never'
+        ) return console.log('Summarization job not created because it is disabled', { executeSummariesAfter: settings.executeSummariesAfter });
 
         const isSettingsChange = source === 'settings-change';
         const cacheTaskId = `tasks-${TaskName.SUMMARIZATION_AND_INSIGHTS}`;
-        const cacheTask = await this.localStorageService.get(cacheTaskId);
+        const cacheTask = isSettingsChange ? undefined : await this.localStorageService.get(cacheTaskId);
         const hasPointer = this.tasks[TaskName.SUMMARIZATION_AND_INSIGHTS];
 
-        const interval = settings.options.executeSummariesAfter * 60 * 60 * 1000;
+        const interval = parseInt(settings.executeSummariesAfter) * 60 * 60 * 1000;
         // const interval = 60 * 1000 // 1 min
         const isNextExecutionInThePast = cacheTask?.nextExecution && Date.now() > cacheTask.nextExecution
         const nextExecution = isNextExecutionInThePast ? Date.now() + interval : cacheTask?.nextExecution || Date.now() + interval;

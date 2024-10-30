@@ -1,4 +1,3 @@
-import OpenAI from "openai";
 import { LocalStorageService } from "./local-storage.service";
 import { userService } from ".";
 import { encode, decode } from 'gpt-3-encoder';
@@ -139,7 +138,7 @@ interface Cost {
 class OpenAIService {
     private apiKey: string;
     private apiUrl: string;
-    private openai: OpenAI;
+    private openai: any;
     private localStorageService: any;
     private assistant: any;
     private tokenizer: Tokenizer;
@@ -158,9 +157,6 @@ class OpenAIService {
             throw new Error('User not logged in');
         }
         this.apiKey = user.llmApiKey;
-        this.openai = new OpenAI({
-            apiKey: this.apiKey
-        });
         this.tokenizer = new Tokenizer();
     }
 

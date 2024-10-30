@@ -7,6 +7,7 @@ import { queueService, userService } from './services';
 import localStorageService from './services/local-storage.service';
 import moment from 'moment';
 import { v4 as uuid } from 'uuid';
+import { isProduction } from '../misc';
 
 export class BackgroundApp extends ServiceWorkerApp {
 
@@ -19,7 +20,7 @@ export class BackgroundApp extends ServiceWorkerApp {
 
   async onInstalled() {
     console.debug('App installed event received');
-    const welcomeUrl = chrome.runtime?.getURL('tabs/welcome.html');
+    const welcomeUrl = isProduction ? 'https://usemink.com/#features' : 'https://useminkapp.netlify.app/#features';
     chrome.runtime.setUninstallURL(configStore.getConfig('UNINSTALL_URL'));
     chrome.tabs.create({ url: welcomeUrl });
 

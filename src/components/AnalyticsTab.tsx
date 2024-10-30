@@ -29,7 +29,7 @@ function AnalyticsTab({ data }: { data: any }) {
             </div>}
 
             {!data?.analytics && <div className="bg-white shadow-lg rounded-lg p-6">
-                <p className="text-gray-700 mb-2 text-sm">We do not have any analytics for you on this day yet..</p>
+                <p className="text-gray-700 mb-2 text-sm">We do not have any analytics for you on this day yet. Wait a couple of hours and you'll see some analytics.</p>
             </div>}
         </div>
     )

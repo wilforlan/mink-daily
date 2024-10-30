@@ -7,6 +7,8 @@ import { userService } from './services';
 const app = new BackgroundApp(RegisteredModules);
 app.init().then(async () => {
   console.info('App initialized');
-  const { email } = await userService.getAccountInfo();
-  await analytics.init({ email });
+  const user = await userService.getAccountInfo();
+  if (user) {
+    await analytics.init({ email: user.email });
+  }
 });
