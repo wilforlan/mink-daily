@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 const EXTENSION_ID = chrome.runtime.id;
 import icon from "data-base64:~content-assets/icon.png"
 
-console.log('EXTENSION_ID', EXTENSION_ID);
 export {}
 
 export const getShadowHostId = () => "mink-daily-notification"
@@ -82,9 +81,10 @@ class ContentApp {
             return stats;
         }
 
-        if (maxAllowedLinksPerDay > 0) {
+        const maxAllowedLinks = parseInt(maxAllowedLinksPerDay);
+        if (maxAllowedLinks > 0) {
             const dailyMinkStats = await getDailyMinkStats(window.location.href);
-            if (dailyMinkStats.total_unique_pages_visited >= maxAllowedLinksPerDay) {
+            if (dailyMinkStats.total_unique_pages_visited >= maxAllowedLinks) {
                 if (!isProduction) console.log("Mink is disabled because you have reached the max allowed links per day");
                 return;
             }
@@ -105,13 +105,10 @@ class ContentApp {
             });
         }
 
-        if (startTrackingSessionAfter > 0) {
-            setTimeout(async () => {
-                await sendData();
-            }, startTrackingSessionAfter * 60 * 1000);
-        } else {
+        const time = parseInt(startTrackingSessionAfter);
+        setTimeout(async () => {
             await sendData();
-        }
+        }, time * 60 * 1000);
     }
 }
 

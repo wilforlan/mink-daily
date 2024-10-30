@@ -76,7 +76,6 @@ export class QueueService {
         const hasPointer = this.tasks[TaskName.SUMMARIZATION_AND_INSIGHTS];
 
         const interval = parseInt(settings.executeSummariesAfter) * 60 * 60 * 1000;
-        // const interval = 60 * 1000 // 1 min
         const isNextExecutionInThePast = cacheTask?.nextExecution && Date.now() > cacheTask.nextExecution
         const nextExecution = isNextExecutionInThePast ? Date.now() + interval : cacheTask?.nextExecution || Date.now() + interval;
 

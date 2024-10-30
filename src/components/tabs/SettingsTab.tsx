@@ -54,7 +54,11 @@ export default function SettingsTab({ data }: { data: any }) {
           <SettingOption
             title="Start Mink on page after"
             description="Set the time after which Mink should start on every webpage."
-            value={settings?.startTrackingSessionAfter || 3}
+            value={
+              (settings?.startTrackingSessionAfter === 'never' || settings?.startTrackingSessionAfter === '0')
+              ? settings?.startTrackingSessionAfter
+              : (parseInt(settings?.startTrackingSessionAfter) || 3)
+            }
             onChange={(e: any) => update('startTrackingSessionAfter', e.target.value)}
             type="dropdown"
             options={[{
@@ -81,7 +85,11 @@ export default function SettingsTab({ data }: { data: any }) {
           <SettingOption
             title="Run my Mink summarisation every"
             description="Set the time after which Mink should run on your content."
-            value={settings?.executeSummariesAfter || 24}
+            value={
+              settings?.executeSummariesAfter === 'never' 
+              ? 'never' 
+              : parseInt(settings?.executeSummariesAfter) || 24
+            }
             onChange={(e: any) => update('executeSummariesAfter', e.target.value)}
             type="dropdown"
             options={[
@@ -109,7 +117,11 @@ export default function SettingsTab({ data }: { data: any }) {
           <SettingOption
             title="Data Retention"
             description="Set data retention policies for your account."
-            value={settings?.deleteDataEvery || 3}
+            value={
+              settings?.deleteDataEvery === 'never' 
+              ? 'never' 
+              : parseInt(settings?.deleteDataEvery) || 3
+            }
             onChange={(e: any) => update('deleteDataEvery', e.target.value)}
             type="dropdown"
             options={[{
@@ -128,7 +140,11 @@ export default function SettingsTab({ data }: { data: any }) {
           <SettingOption
             title="Limit Minked Webpages"
             description="Limit the number of webpages Mink can run on."
-            value={settings?.maxAllowedLinksPerDay || 3}
+            value={
+              settings?.maxAllowedLinksPerDay === 'never' 
+              ? 'never' 
+              : parseInt(settings?.maxAllowedLinksPerDay) || 3
+            }
             onChange={(e: any) => update('maxAllowedLinksPerDay', e.target.value)}
             type="dropdown"
             options={[{
