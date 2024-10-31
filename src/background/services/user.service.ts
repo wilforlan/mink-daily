@@ -84,11 +84,12 @@ export class UserService {
     //   shouldIgnoreSocialMediaPlatforms: true,
     //   startTrackingSessionAfter: 3, // 3 minutes
     // }
+
+    const currentSettings = await this.localStorageService.get('settings');
     await this.localStorageService.update('settings', {
       options: settings,
     });
 
-    const currentSettings = await this.localStorageService.get('settings');
     const shouldAddJob = parseInt(settings.executeSummariesAfter) !== parseInt(currentSettings.options.executeSummariesAfter);
     if (shouldAddJob) {
       console.log('Creating summarization job because settings changed for executeSummariesAfter', {

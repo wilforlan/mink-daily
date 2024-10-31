@@ -3,6 +3,7 @@ import { analyticsTrack } from '@/src/background/commons/analytics';
 import { databaseService, minkService, userService } from '../..';
 import { Task } from '../../../commons/types/task';
 import OpenAIService from '../../openai.service';
+import { isProduction } from '@/src/misc/constants';
 
 
 const MAX_CONTENT_LENGTH = 256000 - 1000; // 256KB - 1KB
@@ -32,9 +33,10 @@ export class CreateSummerizationAndInsights extends Task<string> {
         timestamp: new Date().toISOString(),
       });
 
-      const AiInput = pages
-      .filter((page) => page.content.length > 0 && page.title.length > 0)
-      .map((page) => (
+      const validPages = pages.filter((page) => page.content.length > 0 && page.title.length > 0);
+      console.log(`found ${validPages.length} valid pages to process`);
+
+      const AiInput = validPages.map((page) => (
         `
           Full Link: ${page.url} \n \n
           Title: ${page.title} \n \n
@@ -53,6 +55,10 @@ export class CreateSummerizationAndInsights extends Task<string> {
       
       await minkService.saveSummaryAndInsights({...result, cost, sessionId: summarizationSessionId});
       await databaseService.db.PageData.bulkPut(pages.map((page) => ({ ...page, isProcessed: 'true' })));
+      if (isProduction) {
+        // remove the pages from the database
+        await databaseService.db.PageData.bulkDelete(pages.map((page) => page.id));
+      }
 
       await analyticsTrack(SegmentAnalyticsEvents.SUMMARIZATION_COMPLETE, {
         cost,

@@ -226,9 +226,17 @@ class OpenAIService {
     async getSummaryAndInsights(
         text: string,
         sessionId: string,
-        apiKey?: string
+        apiKey?: string,
+        retries: number = 5
     ): Promise<{ result: any, cost: Cost }> {
         const chunkedResults = await this.getSummaryAndInsightsWithChunking(text, sessionId, apiKey);
+        if (chunkedResults.length === 0 && retries > 0) {
+            console.log(`No chunked results found, retrying ${retries} more times`);
+            return this.getSummaryAndInsights(text, sessionId, apiKey, retries - 1);
+        } else if (chunkedResults.length === 0) {
+            throw new Error('No chunked results found');
+        }
+
         const chunkedResultsString = chunkedResults.map((chunk) => chunk.completion).join("\n\n");
 
         const responder = `

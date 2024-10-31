@@ -67,9 +67,6 @@
     ],
     "permissions": [
       "storage",
-      "scripting",
-      "activeTab",
-      "offscreen",
       "unlimitedStorage",
       "notifications",
       "tabs"

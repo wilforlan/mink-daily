@@ -75,6 +75,8 @@ export class QueueService {
         const cacheTask = isSettingsChange ? undefined : await this.localStorageService.get(cacheTaskId);
         const hasPointer = this.tasks[TaskName.SUMMARIZATION_AND_INSIGHTS];
 
+        if (!cacheTask && isSettingsChange) console.log('No cache task found and settings change, creating new task');
+
         const interval = parseInt(settings.executeSummariesAfter) * 60 * 60 * 1000;
         const isNextExecutionInThePast = cacheTask?.nextExecution && Date.now() > cacheTask.nextExecution
         const nextExecution = isNextExecutionInThePast ? Date.now() + interval : cacheTask?.nextExecution || Date.now() + interval;
@@ -117,7 +119,8 @@ export class QueueService {
         const cacheTaskId = `tasks-${TaskName.DATA_RETENTION_POLICY_CLEANUP}`;
         const cacheTask = await this.localStorageService.get(cacheTaskId);
 
-        const interval = settings.options.deleteDataEvery * 60 * 60 * 1000;
+        
+        const interval = parseInt(settings.options.deleteDataEvery) * 24 * 60 * 60 * 1000;
         const isNextExecutionInThePast = cacheTask?.nextExecution && Date.now() > cacheTask.nextExecution
         const nextExecution = isNextExecutionInThePast ? Date.now() + interval : cacheTask?.nextExecution || Date.now() + interval;
 
