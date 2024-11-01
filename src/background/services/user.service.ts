@@ -54,7 +54,7 @@ export class UserService {
     if (!settings) {
       await this.localStorageService.put('settings', {
         options: {
-          executeSummariesAfter: 24, // 24 hours
+          executeSummariesAfter: 6, // 24 hours
           deleteDataEvery: 3, // 3 days
           forwardMinkDigestToEmail: true, // true
           maxAllowedLinksPerDay: 100,

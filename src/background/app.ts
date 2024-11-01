@@ -49,7 +49,7 @@ export class BackgroundApp extends ServiceWorkerApp {
         // @ts-ignore
       .put('settings', {
         options: {
-          executeSummariesAfter: 24, // 24 hours
+          executeSummariesAfter: 6, // 24 hours
           deleteDataEvery: 3, // 3 days
           forwardMinkDigestToEmail: true, // true
           maxAllowedLinksPerDay: 100,
@@ -85,7 +85,7 @@ export class BackgroundApp extends ServiceWorkerApp {
         // @ts-ignore
       .put('settings', {
         options: {
-          executeSummariesAfter: 24, // 24 hours
+          executeSummariesAfter: 6, // 24 hours
           deleteDataEvery: 3, // 3 days
           forwardMinkDigestToEmail: true, // true
           maxAllowedLinksPerDay: 100,
