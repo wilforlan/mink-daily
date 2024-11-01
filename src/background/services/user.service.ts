@@ -13,6 +13,7 @@ import { analyticsTrack, SegmentAnalyticsEvents } from '@/src/background/commons
 import type { ILoginUserRes } from '@/src/interfaces';
 import OpenAIService from './openai.service';
 import { queueService } from '.';
+import type { DatabaseService } from './database.service';
 
 const validateEmail = (email: string) => {
   // complex regex for email validation
@@ -21,7 +22,10 @@ const validateEmail = (email: string) => {
 };
 
 export class UserService {
-  constructor(private readonly localStorageService: LocalStorageService<LocalStorageMetadata>) {}
+  constructor(
+    private readonly localStorageService: LocalStorageService<LocalStorageMetadata>,
+    private readonly databaseService: DatabaseService
+  ) {}
 
   async getAccountInfo() {
     const user = await this.localStorageService.get('user');
@@ -67,6 +71,8 @@ export class UserService {
 
   async logoutUser(silent?: boolean) {
     await this.localStorageService.delete('user');
+    // purge all data
+    await this.databaseService.db.delete();
     if (!silent) {
       showChromeNotification({
         title: 'Logged out',

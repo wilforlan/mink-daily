@@ -8,10 +8,10 @@ import { MinkService } from './mink.service';
 export * from './user.service';
 export * from './local-storage.service';
 
-export const localStorageService = new LocalStorageService<LocalStorageMetadata>();
-export const userService = new UserService(localStorageService);
-
 export const databaseService = new DatabaseService();
+export const localStorageService = new LocalStorageService<LocalStorageMetadata>();
+export const userService = new UserService(localStorageService, databaseService);
+
 export const queueService = new QueueService(userService, localStorageService);
 export const minkService = new MinkService(
     userService,
