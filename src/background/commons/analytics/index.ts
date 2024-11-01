@@ -51,7 +51,7 @@ const updateIdentity = async () => {
       analytics.reset();
       email = initializedUserEmail;
     }
-    await analytics.identify(email, { email, name });
+    await analytics.identify(email, { email, name: email });
     console.log('Analytics initialized for user ', email);
   } catch (err) {
     captureError(err as Error);

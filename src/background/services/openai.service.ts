@@ -163,10 +163,11 @@ class OpenAIService {
     async getChatCompletionWithRetry(
         messages: { role: string, content: string }[],
         apiKey?: string,
-        retries: number = 5
+        retries: number = 5,
+        { forceJson = false }: { forceJson?: boolean } = {}
     ): Promise<{ completion: string, cost: Cost }> {
         try {
-            return await this.getChatCompletion(messages, apiKey);
+            return await this.getChatCompletion(messages, apiKey, { forceJson });
         } catch (error) {
             if (retries === 0) {
                 await analyticsTrack(SegmentAnalyticsEvents.LLM_SUMMARIZATION_FAILED, {
@@ -179,18 +180,26 @@ class OpenAIService {
                 error: error.message,
                 timestamp: new Date().toISOString(),
             });
-            return this.getChatCompletionWithRetry(messages, apiKey, retries - 1);
+            return this.getChatCompletionWithRetry(messages, apiKey, retries - 1, { forceJson });
         }
     }
 
     async getChatCompletion(
         messages: { role: string, content: string }[],
-        apiKey?: string
+        apiKey?: string,
+        { forceJson = false }: { forceJson?: boolean } = {}
     ): Promise<{ completion: string, cost: Cost }> {
         try {
             const key = apiKey || this.apiKey;
             if (!key) {
                 throw new Error('No API key provided');
+            }
+            const body = {
+                model: 'gpt-4o',
+                messages: messages,
+            };
+            if (forceJson) {
+                body['response_format'] = { type: "json_object" };
             }
             const response = await fetch(this.apiUrl + "/v1/chat/completions", {
                 method: 'POST',
@@ -198,10 +207,7 @@ class OpenAIService {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${key}`,
                 },
-                body: JSON.stringify({
-                    model: 'gpt-4o',
-                    messages: messages,
-                }),
+                body: JSON.stringify(body),
             });
 
             if (!response.ok) {
@@ -227,12 +233,13 @@ class OpenAIService {
         text: string,
         sessionId: string,
         apiKey?: string,
-        retries: number = 5
+        retries: number = 5,
+        summaryRetries: number = 5
     ): Promise<{ result: any, cost: Cost }> {
         const chunkedResults = await this.getSummaryAndInsightsWithChunking(text, sessionId, apiKey);
         if (chunkedResults.length === 0 && retries > 0) {
             console.log(`No chunked results found, retrying ${retries} more times`);
-            return this.getSummaryAndInsights(text, sessionId, apiKey, retries - 1);
+            return this.getSummaryAndInsights(text, sessionId, apiKey, retries - 1, summaryRetries);
         } else if (chunkedResults.length === 0) {
             throw new Error('No chunked results found');
         }
@@ -254,9 +261,18 @@ class OpenAIService {
             { role: 'system', content: INSTRUCTIONS },
             { role: 'user', content: responder }
         ];
-        const {completion, cost} = await this.getChatCompletionWithRetry(messages, apiKey);
+
+        const { completion, cost } = await this.getChatCompletionWithRetry(messages, apiKey, 5, { forceJson: true });
+        const result = ParseJson(completion);
+        if (!result || !result.summary) {
+            // retry
+            if (summaryRetries === 0) {
+                throw new Error('No summary found or generated');
+            }
+            return this.getSummaryAndInsights(text, sessionId, apiKey, retries, summaryRetries - 1);
+        }
         return {
-            result: ParseJson(completion),
+            result,
             cost
         };
     }
@@ -282,14 +298,20 @@ class OpenAIService {
                 timestamp: new Date().toISOString(),
             });
 
-            const executor = (isProduction ? chunks : chunks.slice(0, 2)).map(async (chunk, index) => {
+            let usableChunks = chunks;
+            if (!isProduction) {
+                console.log('Non-production mode, using only 2 chunks');
+                usableChunks = chunks.slice(0, 2);
+            }
+
+            const executor = usableChunks.map(async (chunk, index) => {
                 // console.log(`Processing chunk ${index + 1} of ${chunks.length}`);
                 const messages = [
                     { role: 'system', content: INSTRUCTIONS },
                     { role: 'user', content: chunk },
                     { role: 'user', content: responsePrompt }
                 ];
-                return await this.getChatCompletionWithRetry(messages, key);
+                return await this.getChatCompletionWithRetry(messages, key, 5, { forceJson: true });
             });
 
             return await Promise.all(executor);
@@ -301,7 +323,7 @@ class OpenAIService {
     public async testChatApiKey(apiKey: string): Promise<boolean> {
         try {
             const testMessages = [{ role: 'user', content: 'Say hello world' }];
-            const { completion } = await this.getChatCompletionWithRetry(testMessages, apiKey);
+            const { completion } = await this.getChatCompletionWithRetry(testMessages, apiKey, 5, { forceJson: false });
             return !!completion;
         } catch (error) {
             return false;
