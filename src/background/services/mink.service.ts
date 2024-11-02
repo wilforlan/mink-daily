@@ -105,7 +105,6 @@ export class MinkService {
             const summaries = await this.databaseService.db.SummaryResults
                 .where('createAtTs')
                 .between(startTs, endTs)
-                .reverse() // Get most recent first
                 .toArray();
 
             if (!summaries || summaries.length === 0) {
@@ -117,7 +116,9 @@ export class MinkService {
                 date,
                 timestamp: new Date().toISOString(),
             });
-            return summaries[0];
+
+            const sortedSummaries = summaries.sort((a: any, b: any) => b.createAtTs - a.createAtTs);
+            return sortedSummaries[0];
         } catch (error) {
             console.error('Error getting summary:', error);
             return null;
