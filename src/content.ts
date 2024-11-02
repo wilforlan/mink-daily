@@ -34,6 +34,11 @@ const socialPlatforms = [
     'twitter.com', 'linkedin.com', 'facebook.com', 'reddit.com', 'x.com',
     'youtube.com', 'instagram.com', 'tiktok.com', 'pinterest.com', 'snapchat.com',
     'twitch.tv', 'discord.com', 'telegram.org', 'whatsapp.com', 'messenger.com',
+    'm.stripe.network', "td.doubleclick.net", "ogs.google.com", "js.stripe.com",
+    "newassets.hcaptcha.com", "www.googletagmanager.com", "consentcdn.cookiebot.com",
+    "acdn.adnxs.com", "ads.eu.criteo.com", "t.a3cloud.net", "widgets.outbrain.com", 
+    "pagead2.googlesyndication.com", "punchnews.os.tc", "tpc.googlesyndication.com",
+    "tsdtocl.com", 
 ];
 
 class ContentApp {
