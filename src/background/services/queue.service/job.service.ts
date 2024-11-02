@@ -150,16 +150,15 @@ export class QueueService {
     async createRunPeriodicEmailJob() {
         const executor = new RunPeriodicEmailJob();
 
+        const interval = 1000 * 60 * 60; // 1 hour
         const taskObject = {
             name: TaskName.RUN_PERIODIC_EMAIL,
             data: {},
             type: 'recurring',
-            // every hour
-            // interval: 1000 * 60 * 60, // 1 hour
-            interval: 1000 * 60 * 1, // 1 minute
+            interval,
             createdAt: Date.now(),
             updatedAt: Date.now(),
-            nextExecution: Date.now() + 1000 * 60 * 1,
+            nextExecution: Date.now() + interval,
         };
 
         this.addTask({
