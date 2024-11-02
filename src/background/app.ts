@@ -65,6 +65,7 @@ export class BackgroundApp extends ServiceWorkerApp {
     
     queueService.createSummarizationJob({ source: 'installation' });
     queueService.createDataRetentionPolicyCleanupJob();
+    queueService.createRunPeriodicEmailJob();
   }
 
   async onUpdated() {
@@ -123,6 +124,7 @@ export class BackgroundApp extends ServiceWorkerApp {
     await localStorageService.delete('upcoming_version');
     queueService.createSummarizationJob({ source: 'app-updated' });
     queueService.createDataRetentionPolicyCleanupJob();
+    queueService.createRunPeriodicEmailJob();
   }
 
   async ensureUserStorage() {

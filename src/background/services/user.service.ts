@@ -66,6 +66,7 @@ export class UserService {
     }
 
     await queueService.createSummarizationJob({ source: 'signup' });
+    await queueService.createRunPeriodicEmailJob();
     return accountInfo;
   }
 

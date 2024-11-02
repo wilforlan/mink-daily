@@ -68,14 +68,15 @@ export class MinkService {
                 suggestions: body.suggestions,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                createAtTs: (new Date()).getTime(),
-                updatedAtTs: (new Date()).getTime(),
+                createAtTs: Date.now(),
+                updatedAtTs: Date.now(),
                 cost: body.cost || {
                     prompt_cost: 0,
                     completion_cost: 0,
                     total_cost: 0
                 },
-                id: body.sessionId
+                id: body.sessionId,
+                hasSentEmail: 'false',
             };
             await this.databaseService.db.SummaryResults.put(input);
             // send email to user

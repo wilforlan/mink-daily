@@ -19,6 +19,7 @@ interface SummaryResults {
   cost: Cost;
   createAtTs: number;
   updatedAtTs: number;
+  hasSentEmail: string;
 }
 
 interface ChatMessages {
@@ -66,8 +67,8 @@ export class Database extends Dexie {
 
   constructor() {
     super('mink-db');
-    this.version(5).stores({
-      SummaryResults: '++id, summary, analytics, insights, suggestions, createdAt, updatedAt, createAtTs, updatedAtTs, cost',
+    this.version(6).stores({
+      SummaryResults: '++id, summary, analytics, insights, suggestions, createdAt, updatedAt, createAtTs, updatedAtTs, cost, hasSentEmail',
       ChatMessages: '++id, role, content, createdAt, updatedAt',
       PageData: '++id, title, url, content, description, isProcessed, createdAt, updatedAt, origin, contentSummary, createAtTs, updatedAtTs',
       Notifications: '++id, notificationId, title, body, endTime, createdAt, updatedAt, isRead',

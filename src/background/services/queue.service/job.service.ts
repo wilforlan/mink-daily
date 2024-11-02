@@ -2,14 +2,16 @@ import type { LocalStorageService } from "../local-storage.service";
 import type { UserService } from "../user.service";
 import { CreateSummerizationAndInsights } from "./tasks";
 import { DataRetentionPolicyJob } from "./tasks/data-retention-policy-job";
+import { RunPeriodicEmailJob } from "./tasks/run-periodic-email-job";
 
 enum TaskName {
     SUMMARIZATION_AND_INSIGHTS = 'SUMMARIZATION_AND_INSIGHTS',
     DATA_RETENTION_POLICY_CLEANUP = 'DATA_RETENTION_POLICY_CLEANUP',
+    RUN_PERIODIC_EMAIL = 'RUN_PERIODIC_EMAIL',
 }
 
 interface IJob {
-    name: TaskName.SUMMARIZATION_AND_INSIGHTS | TaskName.DATA_RETENTION_POLICY_CLEANUP;
+    name: TaskName.SUMMARIZATION_AND_INSIGHTS | TaskName.DATA_RETENTION_POLICY_CLEANUP | TaskName.RUN_PERIODIC_EMAIL;
     data: any;
     type: string;
     interval: number;
@@ -144,6 +146,30 @@ export class QueueService {
             execute: executor.do
         });
     }
+
+    async createRunPeriodicEmailJob() {
+        const executor = new RunPeriodicEmailJob();
+
+        const taskObject = {
+            name: TaskName.RUN_PERIODIC_EMAIL,
+            data: {},
+            type: 'recurring',
+            // every hour
+            // interval: 1000 * 60 * 60, // 1 hour
+            interval: 1000 * 60 * 1, // 1 minute
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            nextExecution: Date.now() + 1000 * 60 * 1,
+        };
+
+        this.addTask({
+            ...taskObject,
+            execute: executor.do
+        });
+
+        console.log('Run periodic email job created', taskObject);
+        return taskObject;
+    }   
 
     stop(name: string) {
         if (this.tasks[name]) {
