@@ -1,7 +1,7 @@
 {
   "name": "mink-app",
-  "displayName": "Mink",
-  "version": "1.1.0",
+  "displayName": "Mink - Browser Co-Pilot",
+  "version": "1.2.0",
   "description": "Supercharging your productivity with 10x web browsing co-pilot",
   "author": "williams@viroke.com",
   "license": "ISC",
