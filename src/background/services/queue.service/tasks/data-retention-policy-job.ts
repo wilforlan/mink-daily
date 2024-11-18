@@ -3,7 +3,9 @@ import { analyticsTrack } from '@/src/background/commons/analytics';
 import { databaseService, minkService, userService } from '../..';
 import { Task } from '../../../commons/types/task';
 import { isProduction } from '@/src/misc';
+import { scope as sentryScope } from '@/src/lib/sentry';
 
+sentryScope.setTag("service", "tasks/data-retention-policy-job.ts");
 
 const calculateSize = (data: string) => {
     return new Blob([data]).size;
@@ -42,6 +44,7 @@ export class DataRetentionPolicyJob extends Task<string> {
             await databaseService.db.SummaryResults.clear();
             console.log('Data retention policy cleaned up');
         } catch (error) {
+            sentryScope.captureException(error);
             console.error(error);
         }
     }

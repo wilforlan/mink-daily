@@ -14,6 +14,9 @@ import type { ILoginUserRes } from '@/src/interfaces';
 import OpenAIService from './openai.service';
 import { queueService } from '.';
 import type { DatabaseService } from './database.service';
+import { scope, scope as sentryScope } from '@/src/lib/sentry';
+
+scope.setTag('service', 'user.service.ts');
 
 const validateEmail = (email: string) => {
   // complex regex for email validation
@@ -37,7 +40,7 @@ export class UserService {
 
     const emailValid = validateEmail(accountInfo.email);
     if (!emailValid) {
-      throw new Error('Invalid email');
+      throw new Error('Kindly provide a valid email');
     }
     const openAIKeyValid = await openai.testChatApiKey(accountInfo.llmApiKey);
     if (!openAIKeyValid) {
@@ -67,6 +70,7 @@ export class UserService {
 
     await queueService.createSummarizationJob({ source: 'signup' });
     await queueService.createRunPeriodicEmailJob();
+    sentryScope.setUser(accountInfo);
     return accountInfo;
   }
 

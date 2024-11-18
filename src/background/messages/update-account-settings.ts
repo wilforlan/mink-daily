@@ -2,6 +2,9 @@ import { userService } from '@/src/background/services';
 import type { PlasmoMessaging } from '@plasmohq/messaging';
 import { SegmentAnalyticsEvents } from '../commons/analytics';
 import { analyticsTrack } from '../commons/analytics';
+import { scope as sentryScope } from '@/src/lib/sentry';
+
+sentryScope.setTag("service", "messages/update-account-settings.ts");
 
 const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
   try {
@@ -17,6 +20,7 @@ const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
     
     res.send({ status: true, settings });
   } catch (error) {
+    sentryScope.captureException(error);
     console.error(error);
     res.send({ status: false, info: null, error: error.message || error });
   }

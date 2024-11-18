@@ -2,17 +2,20 @@ import { sendToBackground } from "@plasmohq/messaging";
 import React, { useEffect, useState } from "react";
 const EXTENSION_ID = chrome.runtime.id;
 import icon from "data-base64:~content-assets/icon.png"
+import { scope as sentryScope } from "./lib/sentry";
 
-export {}
+export { }
+
+sentryScope.setTag("content-script", "true");
 
 export const getShadowHostId = () => "mink-daily-notification"
-import styleText from "data-text:./style.css" 
+import styleText from "data-text:./style.css"
 import type { PlasmoCSConfig } from "plasmo"
 import { isProduction } from "./misc";
- 
+
 export const config: PlasmoCSConfig = {
-  matches: ["<all_urls>"],
-  all_frames: true
+    matches: ["<all_urls>"],
+    all_frames: true
 }
 
 console.log(
@@ -36,9 +39,9 @@ const socialPlatforms = [
     'twitch.tv', 'discord.com', 'telegram.org', 'whatsapp.com', 'messenger.com',
     'm.stripe.network', "td.doubleclick.net", "ogs.google.com", "js.stripe.com",
     "newassets.hcaptcha.com", "www.googletagmanager.com", "consentcdn.cookiebot.com",
-    "acdn.adnxs.com", "ads.eu.criteo.com", "t.a3cloud.net", "widgets.outbrain.com", 
+    "acdn.adnxs.com", "ads.eu.criteo.com", "t.a3cloud.net", "widgets.outbrain.com",
     "pagead2.googlesyndication.com", "punchnews.os.tc", "tpc.googlesyndication.com",
-    "tsdtocl.com", 
+    "tsdtocl.com", "www.recaptcha.net", "scone-pa.clients6.google.com", 
 ];
 
 class ContentApp {
@@ -54,17 +57,21 @@ class ContentApp {
     }
 
     private async getSettings() {
-        const { status, settings } = await sendToBackground({
-            extensionId: EXTENSION_ID,
-            name: "get-account-settings",
-            body: {},
-        });
-        if (!status) throw new Error("Failed to get settings");
-        return settings;
+        try {
+            const { status, settings } = await sendToBackground({
+                extensionId: EXTENSION_ID,
+                name: "get-account-settings",
+                body: {},
+            });
+            if (!status) throw new Error("Failed to get settings");
+            return settings;
+        } catch (error) {
+            sentryScope.captureException(error);
+        }
     };
 
     private async trySendPageContent() {
-        const {startTrackingSessionAfter, maxAllowedLinksPerDay} = this.settings.options;
+        const { startTrackingSessionAfter, maxAllowedLinksPerDay } = this.settings.options;
         if (startTrackingSessionAfter === 'never') {
             console.log("Mink is disabled on this page");
             return;
@@ -76,14 +83,18 @@ class ContentApp {
         }
 
         const getDailyMinkStats = async (url: string) => {
-            const { status, stats } = await sendToBackground({
-                extensionId: EXTENSION_ID,
-                name: "get-daily-mink-stats",
-                body: { url },
-            });
+            try {
+                const { status, stats } = await sendToBackground({
+                    extensionId: EXTENSION_ID,
+                    name: "get-daily-mink-stats",
+                    body: { url },
+                });
 
-            if (!status) throw new Error("Failed to get daily mink stats");
-            return stats;
+                if (!status) throw new Error("Failed to get daily mink stats");
+                return stats;
+            } catch (error) {
+                sentryScope.captureException(error);
+            }
         }
 
         const maxAllowedLinks = parseInt(maxAllowedLinksPerDay);
@@ -99,15 +110,20 @@ class ContentApp {
                 return;
             }
         }
-        
+
         const sendData = async () => {
-            const pageContent = extractPageContent();
-            // console.log(`***Mink: I just tracked your session, open mink to disable.***`);
-            await sendToBackground({
-                extensionId: EXTENSION_ID,
-                name: "track-webpage-session",
-                body: pageContent,
-            });
+            try {
+                const pageContent = extractPageContent();
+                // console.log(`***Mink: I just tracked your session, open mink to disable.***`);
+                await sendToBackground({
+                    extensionId: EXTENSION_ID,
+                    name: "track-webpage-session",
+                    body: pageContent,
+                });
+            } catch (error) {
+                sentryScope.captureException(error);
+            }
+
         }
 
         const time = parseInt(startTrackingSessionAfter);
@@ -155,7 +171,7 @@ export const getStyle = () => {
     const style = document.createElement("style")
     style.textContent = styleText
     return style
-  }
+}
 
 // const Notification = ({ notification }: { notification: any }) => {
 

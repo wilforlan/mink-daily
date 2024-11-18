@@ -3,6 +3,9 @@ import { analyticsTrack } from '@/src/background/commons/analytics';
 import { databaseService, minkService, userService } from '../..';
 import { Task } from '../../../commons/types/task';
 import { isProduction } from '@/src/misc';
+import { scope as sentryScope } from '@/src/lib/sentry';
+
+sentryScope.setTag("service", "tasks/run-periodic-email-job.ts");
 
 
 export class RunPeriodicEmailJob extends Task<string> {
@@ -39,6 +42,7 @@ export class RunPeriodicEmailJob extends Task<string> {
                 console.log(`Emails sent for ${summariesToSendNotSent.length} summaries`);
             }
         } catch (error) {
+            sentryScope.captureException(error);
             console.error('Error running periodic email job:', error);
         }
     }
