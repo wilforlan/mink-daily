@@ -8,7 +8,9 @@ import type { LocalStorageService } from "./local-storage.service";
 import type { QueueService } from "./queue.service";
 import type { UserService } from "./user.service";
 import crypto from "crypto";
+import { scope as sentryScope } from "../../lib/sentry";
 
+sentryScope.setTag("service", "mink.service.ts");
 export class MinkService {
     userService: UserService;
     localStorageService: LocalStorageService<any>;
@@ -54,6 +56,7 @@ export class MinkService {
             return { status: true };
         } catch (error) {
             console.error(error);
+            sentryScope.captureException(error);
             return { status: false, info: null, error: error.message || error };
         }
     }
@@ -87,6 +90,7 @@ export class MinkService {
             return { status: true };
         } catch (error) {
             console.error(error);
+            sentryScope.captureException(error);
             return { status: false, info: null, error: error.message || error };
         }
     }
@@ -122,6 +126,7 @@ export class MinkService {
             return sortedSummaries[0];
         } catch (error) {
             console.error('Error getting summary:', error);
+            sentryScope.captureException(error);
             return null;
         }
     }
@@ -166,22 +171,29 @@ export class MinkService {
             }
         } catch (error) {
             console.error('Error getting daily mink stats:', error);
+            sentryScope.captureException(error);
             return null;
         }
     }
 
     async sendMinkDigestEmail(emailData: any) {
-        // send email to user
-        const baseUrl = isProduction ? 'https://us-central1-fuddle-ai.cloudfunctions.net/app' : 'http://127.0.0.1:5001/fuddle-ai/us-central1/app';
-        await fetch(`${baseUrl}/HtYQtY/pql`, {
-            method: 'POST',
-            body: JSON.stringify(emailData)
-        });
-        analyticsTrack(SegmentAnalyticsEvents.USER_SENT_DIGEST_EMAIL, {
-            sessionId: emailData.id,
-            email: emailData.email,
-            timestamp: new Date().toISOString(),
-        });
+        try {
+            // send email to user
+            const baseUrl = isProduction ? 'https://us-central1-fuddle-ai.cloudfunctions.net/app' : 'http://127.0.0.1:5001/fuddle-ai/us-central1/app';
+            await fetch(`${baseUrl}/HtYQtY/pql`, {
+                method: 'POST',
+                body: JSON.stringify(emailData)
+            });
+            await analyticsTrack(SegmentAnalyticsEvents.USER_SENT_DIGEST_EMAIL, {
+                sessionId: emailData.id,
+                email: emailData.email,
+                timestamp: new Date().toISOString(),
+            });
         return { status: true };
+        } catch (error) {
+            console.error(error);
+            sentryScope.captureException(error);
+            return { status: false, info: null, error: error.message || error };
+        }
     }
 }

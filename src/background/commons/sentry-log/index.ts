@@ -113,7 +113,7 @@ class SentryCapturer {
   createError = async (error: string): Promise<void> => {
     if (!this.email) await this.onInit();
     const err = new Error(error);
-    if (isProduction) this.captureError(err, error);
+    this.captureError(err, error);
     return console.log(error);
   };
 }

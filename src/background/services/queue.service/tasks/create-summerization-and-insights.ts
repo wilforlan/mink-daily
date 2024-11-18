@@ -4,7 +4,9 @@ import { databaseService, minkService, userService } from '../..';
 import { Task } from '../../../commons/types/task';
 import OpenAIService from '../../openai.service';
 import { isProduction } from '@/src/misc/constants';
+import { scope as sentryScope } from '@/src/lib/sentry';
 
+sentryScope.setTag("service", "tasks/create-summerization-and-insights.ts");
 
 const MAX_CONTENT_LENGTH = 256000 - 1000; // 256KB - 1KB
 export class CreateSummerizationAndInsights extends Task<string> {
@@ -76,6 +78,7 @@ export class CreateSummerizationAndInsights extends Task<string> {
       };
 
     } catch (error) {
+      sentryScope.captureException(error);
       console.log("error in create-summerization-and-insights");
       console.error(error);
     }

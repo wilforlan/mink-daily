@@ -2,6 +2,9 @@ import { databaseService, minkService, userService } from '@/src/background/serv
 import type { PlasmoMessaging } from '@plasmohq/messaging';
 import { SegmentAnalyticsEvents } from '../commons/analytics';
 import { analyticsTrack } from '../commons/analytics';
+import { scope as sentryScope } from '@/src/lib/sentry';
+
+sentryScope.setTag("service", "messages/track-webpage-session.ts");
 
 const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
   try {
@@ -15,6 +18,7 @@ const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
     });
     res.send({ status: true });
   } catch (error) {
+    sentryScope.captureException(error);
     console.error(error);
     res.send({ status: false, info: null, error: error.message || error });
   }

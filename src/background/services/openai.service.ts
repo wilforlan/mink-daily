@@ -5,7 +5,9 @@ import Tokenizer from "../utils/tokenizer.utils";
 import { isProduction } from "@/src/misc";
 import { SegmentAnalyticsEvents } from "../commons/analytics";
 import { analyticsTrack } from "../commons/analytics";
+import { scope as sentryScope } from "../../lib/sentry";
 
+sentryScope.setTag("service", "openai.service.ts");
 const responsePrompt = `
 From my attachments, message history and your memory, generate summaries, analytics, insights and suggestions for me:
 
@@ -120,7 +122,7 @@ export const calculateCost = (usage: any, model: string) => {
     if (!modelCost) {
         throw new Error(`Model ${model} not found`);
     }
-    const cost = { 
+    const cost = {
         prompt_cost: ((usage?.prompt_tokens || 0) / MAX_TOKEN_PER_COST_INPUT) * modelCost.input,
         completion_cost: ((usage?.completion_tokens || 0) / MAX_TOKEN_PER_COST_INPUT) * modelCost.output,
         total_cost: 0,
@@ -210,11 +212,19 @@ class OpenAIService {
                 body: JSON.stringify(body),
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error(`Error fetching chat completion: ${response.statusText}`);
+                console.log("response from openai error", response);
+                let errorText = data?.error?.message || await response.text() || response.statusText
+                if (errorText.length < 1 ) {
+                    errorText = [401, 403].includes(response.status) ? 'Unauthorized' 
+                        : [404].includes(response.status) ? 'Not Found' : 'Internal Server Error';
+                }
+                throw new Error(errorText);
             }
 
-            const data = await response.json();
+            
 
             if (data.choices && data.choices.length > 0) {
                 return {
@@ -225,6 +235,7 @@ class OpenAIService {
                 throw new Error('No chat completion found');
             }
         } catch (error) {
+            sentryScope.captureException(error);
             throw new Error(`Error fetching chat completion: ${error.message}`);
         }
     }
@@ -236,17 +247,18 @@ class OpenAIService {
         retries: number = 5,
         summaryRetries: number = 5
     ): Promise<{ result: any, cost: Cost }> {
-        const chunkedResults = await this.getSummaryAndInsightsWithChunking(text, sessionId, apiKey);
-        if (chunkedResults.length === 0 && retries > 0) {
-            console.log(`No chunked results found, retrying ${retries} more times`);
-            return this.getSummaryAndInsights(text, sessionId, apiKey, retries - 1, summaryRetries);
-        } else if (chunkedResults.length === 0) {
-            throw new Error('No chunked results found');
-        }
+        try {
+            const chunkedResults = await this.getSummaryAndInsightsWithChunking(text, sessionId, apiKey);
+            if (chunkedResults.length === 0 && retries > 0) {
+                console.log(`No chunked results found, retrying ${retries} more times`);
+                return this.getSummaryAndInsights(text, sessionId, apiKey, retries - 1, summaryRetries);
+            } else if (chunkedResults.length === 0) {
+                throw new Error('No chunked results found');
+            }
 
-        const chunkedResultsString = chunkedResults.map((chunk) => chunk.completion).join("\n\n");
+            const chunkedResultsString = chunkedResults.map((chunk) => chunk.completion).join("\n\n");
 
-        const responder = `
+            const responder = `
             Your output has been chunked into smaller parts for better processing.
             Below is the result from the previous chunk:
 
@@ -257,24 +269,29 @@ class OpenAIService {
             ${responsePrompt}                
         `;
 
-        const messages = [
-            { role: 'system', content: INSTRUCTIONS },
-            { role: 'user', content: responder }
-        ];
+            const messages = [
+                { role: 'system', content: INSTRUCTIONS },
+                { role: 'user', content: responder }
+            ];
 
-        const { completion, cost } = await this.getChatCompletionWithRetry(messages, apiKey, 5, { forceJson: true });
-        const result = ParseJson(completion);
-        if (!result || !result.summary) {
-            // retry
-            if (summaryRetries === 0) {
-                throw new Error('No summary found or generated');
+            const { completion, cost } = await this.getChatCompletionWithRetry(messages, apiKey, 5, { forceJson: true });
+            const result = ParseJson(completion);
+            if (!result || !result.summary) {
+                // retry
+                if (summaryRetries === 0) {
+                    throw new Error('No summary found or generated');
+                }
+                return this.getSummaryAndInsights(text, sessionId, apiKey, retries, summaryRetries - 1);
             }
-            return this.getSummaryAndInsights(text, sessionId, apiKey, retries, summaryRetries - 1);
+            return {
+                result,
+                cost
+            };
+        } catch (error) {
+            console.log('Error getting summary and insights', error);
+            sentryScope.captureException(error);
+            throw error;
         }
-        return {
-            result,
-            cost
-        };
     }
 
     async getSummaryAndInsightsWithChunking(
@@ -316,7 +333,8 @@ class OpenAIService {
 
             return await Promise.all(executor);
         } catch (error) {
-            throw new Error(`Error fetching chat completion: ${error.message}`);
+            sentryScope.captureException(error);
+            throw error;
         }
     }
 

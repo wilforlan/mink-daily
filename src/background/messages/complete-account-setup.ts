@@ -1,5 +1,8 @@
 import { userService } from '@/src/background/services';
 import type { PlasmoMessaging } from '@plasmohq/messaging';
+import { scope as sentryScope, client as sentry } from '@/src/lib/sentry';
+
+sentryScope.setTag("service", "messages/complete-account-setup.ts");
 
 const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
   try {
@@ -8,6 +11,7 @@ const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
     res.send({ status: true, info });
   } catch (error) {
     console.error(error);
+    sentryScope.captureException(error);
     res.send({ status: false, info: null, error: error.message || error });
   }
 };

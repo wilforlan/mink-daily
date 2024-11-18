@@ -8,7 +8,9 @@ import localStorageService from './services/local-storage.service';
 import moment from 'moment';
 import { v4 as uuid } from 'uuid';
 import { isProduction } from '../misc';
+import { scope as sentryScope } from '../lib/sentry';
 
+sentryScope.setTag("service", "background-service-worker");
 export class BackgroundApp extends ServiceWorkerApp {
 
   constructor(modules: ServiceWorkerModule[]) {
@@ -74,6 +76,10 @@ export class BackgroundApp extends ServiceWorkerApp {
     const user = await userService.getAccountInfo();
     const isLoggedIn = !!user;
 
+    if (isLoggedIn) {
+      sentryScope.setUser(user);
+    }
+
     // @ts-ignore
     await localStorageService.put('last_installed_version', chrome.runtime.getManifest().version);
 
@@ -118,6 +124,7 @@ export class BackgroundApp extends ServiceWorkerApp {
       console.info('App update analytics sent successfully');
     } catch (error) {
       console.error(error as Error);
+      sentryScope.captureException(error);
     }
 
     // @ts-ignore
@@ -125,6 +132,7 @@ export class BackgroundApp extends ServiceWorkerApp {
     queueService.createSummarizationJob({ source: 'app-updated' });
     queueService.createDataRetentionPolicyCleanupJob();
     queueService.createRunPeriodicEmailJob();
+
   }
 
   async ensureUserStorage() {
