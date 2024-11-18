@@ -2,7 +2,7 @@ import { minkService, userService } from '@/src/background/services';
 import type { PlasmoMessaging } from '@plasmohq/messaging';
 import { scope as sentryScope } from '@/src/lib/sentry';
 
-sentryScope.setTag("service", "messages/get-account-settings.ts");
+sentryScope.setTag("service", "messages/get-daily-mink-stats.ts");
 
 const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
   try {
