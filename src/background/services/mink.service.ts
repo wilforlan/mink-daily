@@ -113,7 +113,12 @@ export class MinkService {
                 .toArray();
 
             if (!summaries || summaries.length === 0) {
-                return null;
+                return {
+                    summary: null,
+                    analytics: null,
+                    insights: null,
+                    suggestions: null,
+                }
             }
 
             await analyticsTrack(SegmentAnalyticsEvents.USER_FETCHED_SUMMARY, {
@@ -195,5 +200,9 @@ export class MinkService {
             sentryScope.captureException(error);
             return { status: false, info: null, error: error.message || error };
         }
+    }
+
+    async hasAtLeastOneSummary() {
+        return this.databaseService.db.SummaryResults.count().then((count) => count > 0);
     }
 }

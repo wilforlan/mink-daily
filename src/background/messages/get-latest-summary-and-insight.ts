@@ -6,7 +6,14 @@ sentryScope.setTag("service", "messages/get-latest-summary-and-insight.ts");
 
 const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
   try {
-    const data = await minkService.getLatestSummaryAndInsight({ date: req.body.date });
+    const result = await minkService.getLatestSummaryAndInsight({ date: req.body.date });
+    const hasHadAtleastOneSummary = await minkService.hasAtLeastOneSummary();
+
+    const data = {
+      ...result,
+      hasHadAtleastOneSummary
+    };
+
     res.send({ status: true, data });
   } catch (error) {
     sentryScope.captureException(error);
