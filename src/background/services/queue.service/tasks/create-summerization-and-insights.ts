@@ -1,11 +1,11 @@
 import { SegmentAnalyticsEvents } from '@/src/background/commons/analytics';
 import { analyticsTrack } from '@/src/background/commons/analytics';
-import { databaseService, minkService, userService } from '../..';
+import { databaseService, minkService, userService, billingService, supabaseService } from '../..';
 import { Task } from '../../../commons/types/task';
 import OpenAIService from '../../openai.service';
 import { isProduction } from '@/src/misc/constants';
 import { scope as sentryScope } from '@/src/lib/sentry';
-
+import { BillingService } from '../../billing.service';
 sentryScope.setTag("service", "tasks/create-summerization-and-insights.ts");
 
 const MAX_CONTENT_LENGTH = 256000 - 1000; // 256KB - 1KB
@@ -19,11 +19,22 @@ export class CreateSummerizationAndInsights extends Task<string> {
   async do() {
     try {
       console.log('Starting to create summerization and insights');
+
+      const { summary_stats, website_stats } = await billingService.getUsage();
+      if (summary_stats.total_remaining <= 0) {
+        console.log("No remaining summaries allowed");
+        // Trigger a notification to the user
+        return;
+      }
+
       let openAiService = new OpenAIService();
       await openAiService.init();
 
-      const pages = await databaseService.db.PageData.where('isProcessed').notEqual('true').toArray();
-      // const pages = await databaseService.db.PageData.toArray();
+      const page_data = await databaseService.db.PageData.where('isProcessed').notEqual('true').toArray();
+      // const page_data = await databaseService.db.PageData.toArray();
+      
+      // slice the pages to the remaining allowed
+      const pages = page_data.slice(0, website_stats.total_remaining);
       if (!pages.length) return console.log('No pages to process');
 
       const summarizationSessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -33,6 +44,8 @@ export class CreateSummerizationAndInsights extends Task<string> {
         settings: await userService.getSettings(),
         totalPages: pages.length,
         timestamp: new Date().toISOString(),
+        summary_stats,
+        website_stats
       });
 
       const validPages = pages.filter((page) => page.content.length > 0 && page.title.length > 0);
@@ -68,6 +81,8 @@ export class CreateSummerizationAndInsights extends Task<string> {
         timestamp: new Date().toISOString(),
         settings: await userService.getSettings(),
         sessionId: summarizationSessionId,
+        summary_stats,
+        website_stats
       });
 
       console.log('Summary and insights saved');
