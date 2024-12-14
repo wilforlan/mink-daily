@@ -6,6 +6,7 @@ import { isProduction } from "@/src/misc";
 import { SegmentAnalyticsEvents } from "../commons/analytics";
 import { analyticsTrack } from "../commons/analytics";
 import { scope as sentryScope } from "../../lib/sentry";
+import { supabaseService } from "./index";
 
 sentryScope.setTag("service", "openai.service.ts");
 const responsePrompt = `
@@ -193,9 +194,6 @@ class OpenAIService {
     ): Promise<{ completion: string, cost: Cost }> {
         try {
             const key = apiKey || this.apiKey;
-            if (!key) {
-                throw new Error('No API key provided');
-            }
             const body = {
                 model: 'gpt-4o',
                 messages: messages,
@@ -203,24 +201,13 @@ class OpenAIService {
             if (forceJson) {
                 body['response_format'] = { type: "json_object" };
             }
-            const response = await fetch(this.apiUrl + "/v1/chat/completions", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${key}`,
-                },
-                body: JSON.stringify(body),
-            });
+            const response = await supabaseService.queryOpenAI(body);
 
-            const data = await response.json();
+            const {data, error} = response
 
-            if (!response.ok) {
-                console.log("response from openai error", response);
-                let errorText = data?.error?.message || await response.text() || response.statusText
-                if (errorText.length < 1 ) {
-                    errorText = [401, 403].includes(response.status) ? 'Unauthorized' 
-                        : [404].includes(response.status) ? 'Not Found' : 'Internal Server Error';
-                }
+            if (error) {
+                console.log("response from openai error", error);
+                let errorText = error?.message
                 throw new Error(errorText);
             }
 
@@ -300,9 +287,6 @@ class OpenAIService {
         apiKey?: string
     ): Promise<any[]> {
         const key = apiKey || this.apiKey;
-        if (!key) {
-            throw new Error('No API key provided');
-        }
         try {
             const chunks = (await this.tokenizer.splitWithLangchain(
                 text,
