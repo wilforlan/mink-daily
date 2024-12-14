@@ -51,10 +51,10 @@ export class BackgroundApp extends ServiceWorkerApp {
         // @ts-ignore
       .put('settings', {
         options: {
-          executeSummariesAfter: 6, // 24 hours
-          deleteDataEvery: 3, // 3 days
+          executeSummariesAfter: 24, // 24 hours
+          deleteDataEvery: 7, // 3 days
           forwardMinkDigestToEmail: true, // true
-          maxAllowedLinksPerDay: 100,
+          maxAllowedLinksPerDay: 50,
           shouldIgnoreSocialMediaPlatforms: true,
           startTrackingSessionAfter: 3, // 3 minutes
           ignoredWebsiteList: [],
@@ -92,10 +92,10 @@ export class BackgroundApp extends ServiceWorkerApp {
         // @ts-ignore
       .put('settings', {
         options: {
-          executeSummariesAfter: 6, // 24 hours
-          deleteDataEvery: 3, // 3 days
+          executeSummariesAfter: 24, // 24 hours
+          deleteDataEvery: 7, // 3 days
           forwardMinkDigestToEmail: true, // true
-          maxAllowedLinksPerDay: 100,
+          maxAllowedLinksPerDay: 50,
           shouldIgnoreSocialMediaPlatforms: true,
           startTrackingSessionAfter: 3, // 3 minutes
           ignoredWebsiteList: [],

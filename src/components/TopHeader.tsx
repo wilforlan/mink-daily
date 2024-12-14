@@ -17,7 +17,7 @@ import icon from "data-base64:~content-assets/icon.png"
 import { sendToBackground } from '@plasmohq/messaging';
 
 const today = new Date();
-const formatNumber = (num: number = 0) => num.toLocaleString('en-US');
+const formatNumber = (num: number = 0) => Math.max(num, 0).toLocaleString('en-US');
 
 const subscriptionLink = isProduction ?
   "https://buy.stripe.com/9AQg1neqrglEe76aEL" :

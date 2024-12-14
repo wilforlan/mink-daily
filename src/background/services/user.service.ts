@@ -32,11 +32,11 @@ export class UserService {
 
   async getAccountInfo() {
     const user = await this.localStorageService.get('user');
-    console.log('user', user);
     return user;
   }
 
   async setAccountInfo(accountInfo: ILoginUserRes) {
+    await this.localStorageService.put('planTier', 'free');
     await this.localStorageService.put('user', {
       planTier: "free",
       stripeCustomerId: "",
@@ -45,7 +45,7 @@ export class UserService {
       stripeCurrentPeriodEnd: "",
       ...accountInfo,
     });
-    
+
     if (accountInfo.isNewUser) {
       await analyticsTrack(SegmentAnalyticsEvents.USER_SIGNUP, {
         email: accountInfo.email,
