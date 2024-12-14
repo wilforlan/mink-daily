@@ -1,6 +1,6 @@
 import { SegmentAnalyticsEvents } from '@/src/background/commons/analytics';
 import { analyticsTrack } from '@/src/background/commons/analytics';
-import { databaseService, minkService, userService, billingService, supabaseService } from '../..';
+import { databaseService, minkService, userService, billingService, supabaseService, localStorageService } from '../..';
 import { Task } from '../../../commons/types/task';
 import { isProduction } from '@/src/misc';
 import { scope as sentryScope } from '@/src/lib/sentry';
@@ -9,6 +9,11 @@ sentryScope.setTag("service", "tasks/run-periodic-email-job.ts");
 
 const summaryExhaustionChecker = async (email: string) => {
     try {
+        const { timestamp } = await localStorageService.get('lastSummaryExhaustionCheck');
+        const hasSentInTheLast8days = timestamp && new Date(timestamp).getTime() > (new Date().getTime() - (1000 * 60 * 60 * 24 * 8));
+        if (hasSentInTheLast8days) {
+            return console.log("Already sent a summary exhaustion notification in the last 8 days");
+        }
         const { summary_stats, website_stats, isPaidUser } = await billingService.getUsage();
         if (summary_stats.total_remaining <= 0) {
             console.log("No remaining summaries allowed, sending notification to user");
@@ -27,6 +32,10 @@ const summaryExhaustionChecker = async (email: string) => {
                 website_stats,
                 email,
                 isPaidUser
+            });
+            localStorageService.put('lastSummaryExhaustionCheck', {
+                timestamp: new Date().toISOString(),
+                email
             });
         }
     } catch (error) {
