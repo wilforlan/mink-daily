@@ -12,6 +12,7 @@ export enum SegmentAnalyticsEvents {
   EXTENSION_INSTALLED = 'App Installed - Chrome Extension',
   EXTENSION_UPDATED = 'App Updated - Chrome Extension',
   USER_SIGNUP = 'User Signup - Chrome Extension',
+  USER_LOGIN = 'User Login - Chrome Extension',
   SUMMARIZATION_COMPLETE = 'Summarization Complete - Chrome Extension',
   SUMMARIZATION_FAILED = 'Summarization Failed - Chrome Extension',
   SUMMARIZATION_STARTED = 'Summarization Started - Chrome Extension',
@@ -23,6 +24,7 @@ export enum SegmentAnalyticsEvents {
   WEB_PAGE_SESSION_SAVED = 'Web Page Session Saved - Chrome Extension',
   DATA_RETENTION_POLICY_CLEANUP = 'Data Retention Policy Cleanup - Chrome Extension',
   USER_SENT_DIGEST_EMAIL = 'User Sent Digest Email - Chrome Extension',
+  USER_SUMMARY_EXHAUSTION_NOTIFICATION = 'User Summary Exhaustion Notification - Chrome Extension',
 }
 
 const updateIdentity = async () => {
