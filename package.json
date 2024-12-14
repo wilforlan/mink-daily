@@ -20,6 +20,7 @@
     "@plasmohq/messaging": "^0.6.2",
     "@react-oauth/google": "^0.12.1",
     "@sentry/react": "^8.37.1",
+    "@supabase/supabase-js": "^2.47.3",
     "dexie": "^4.0.8",
     "firebase": "^10.14.1",
     "gpt-3-encoder": "^1.1.4",

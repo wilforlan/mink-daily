@@ -1,4 +1,3 @@
-import { Msg, MeetingOrigin, StopMeetingSource } from '../misc';
 import type { Event } from '@sentry/react';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,8 +16,15 @@ export enum LLMPlatform {
 
 export interface ILoginUserRes {
   email: string;
-  llmApiKey: string;
-  llmPlatform: LLMPlatform;
+  llmApiKey?: string;
+  llmPlatform?: LLMPlatform;
+  username?: string;
+  isNewUser?: boolean;
+  planTier?: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripePriceId?: string;
+  stripeCurrentPeriodEnd?: string;
 }
 
 export interface ICurrentUser extends ILoginUserRes {
@@ -45,7 +51,10 @@ export interface IApplicationSettings {
 }
 
 export interface ListenerInterface {
-  action: Msg;
+  action: {
+    type: string;
+    payload: UnknownType;
+  };
   data: UnknownType;
 }
 

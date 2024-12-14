@@ -1,6 +1,11 @@
 import { sendToBackground } from "@plasmohq/messaging";
 import SettingOption from "../SettingOption"
 import { useEffect, useState } from "react";
+import { isProduction } from "@/src/misc";
+
+const MANAGE_SUBSCRIPTION_URL = isProduction ? 
+  'https://billing.stripe.com/p/login/8wM3eibEP66F3ug6oo' : 
+  'https://billing.stripe.com/p/login/test_14k6pw3Vdg740bS5kk';
 
 export default function SettingsTab({ data }: { data: any }) {
   const [settings, setSettings] = useState(null);
@@ -34,6 +39,10 @@ export default function SettingsTab({ data }: { data: any }) {
       console.error(error);
       setError(error.message || error);
     }
+  }
+
+  const handleManageSubscription = () => {
+    window.open(MANAGE_SUBSCRIPTION_URL, '_blank');
   }
 
   useEffect(() => {
@@ -177,6 +186,10 @@ export default function SettingsTab({ data }: { data: any }) {
             value={settings?.shouldIgnoreSocialMediaPlatforms || false}
             onChange={(e: any) => update('shouldIgnoreSocialMediaPlatforms', e)}
           />
+
+          <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleManageSubscription}>
+            Manage Subscription
+          </button>
         </div>
       </fieldset>
     </div>

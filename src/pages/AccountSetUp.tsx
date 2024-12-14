@@ -113,18 +113,23 @@ function AddAccountInfo() {
 
 function AccountSetUp() {
     const [shouldShowAccountInfo, setShouldShowAccountInfo] = React.useState(false)
+    const startLogin = () => {
+        sendToBackground({
+            name: "start-login",
+        })
+    }
     return (
         <div className="font-sans leading-normal tracking-normal h-screen flex items-center justify-center">
             <div className="p-8 max-w-sm w-full">
                 <h1 className="text-3xl font-bold mb-6 text-center">Welcome to Mink</h1>
                 <p className="text-center text-gray-700"> Your daily web research and work assistant. Set up your account to get started. Your data only exist on your browser and we never share your data or private keys with anyone. </p>
-                {!shouldShowAccountInfo && <button
+                <button
                     className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-400 transition-all duration-300 ease-in-out flex items-center justify-center mt-5"
-                    onClick={() => setShouldShowAccountInfo(true)}
+                    onClick={() => startLogin()}
                 >
                     <i className="fa-brands fa-google mr-2"></i> Set Up My Account
-                </button>}
-                {shouldShowAccountInfo && <AddAccountInfo />}
+                </button>
+                {/* {shouldShowAccountInfo && <AddAccountInfo />} */}
             </div>
         </div>
     )

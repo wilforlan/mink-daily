@@ -5,6 +5,7 @@ interface User {
   email: string;
   llmApiKey: string;
   llmPlatform: string;
+  planTier: string;
 }
 
 interface UserContextType {
