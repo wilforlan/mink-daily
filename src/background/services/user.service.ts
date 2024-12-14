@@ -32,35 +32,47 @@ export class UserService {
 
   async getAccountInfo() {
     const user = await this.localStorageService.get('user');
+    console.log('user', user);
     return user;
   }
 
   async setAccountInfo(accountInfo: ILoginUserRes) {
-    const openai = new OpenAIService(accountInfo.llmApiKey);
-
-    const emailValid = validateEmail(accountInfo.email);
-    if (!emailValid) {
-      throw new Error('Kindly provide a valid email');
-    }
-    const openAIKeyValid = await openai.testChatApiKey(accountInfo.llmApiKey);
-    if (!openAIKeyValid) {
-      throw new Error('Invalid OpenAI key');
-    }
-    await this.localStorageService.put('user', accountInfo);
-    
-    await analyticsTrack(SegmentAnalyticsEvents.USER_SIGNUP, {
-      email: accountInfo.email,
+    await this.localStorageService.put('user', {
+      planTier: "free",
+      stripeCustomerId: "",
+      stripeSubscriptionId: "",
+      stripePriceId: "",
+      stripeCurrentPeriodEnd: "",
+      ...accountInfo,
     });
+    
+    if (accountInfo.isNewUser) {
+      await analyticsTrack(SegmentAnalyticsEvents.USER_SIGNUP, {
+        email: accountInfo.email,
+        username: accountInfo.username,
+        planTier: accountInfo.planTier,
+        stripeCustomerId: accountInfo.stripeCustomerId,
+        stripeSubscriptionId: accountInfo.stripeSubscriptionId,
+        stripePriceId: accountInfo.stripePriceId,
+        stripeCurrentPeriodEnd: accountInfo.stripeCurrentPeriodEnd,
+      });
+    } else {
+      await analyticsTrack(SegmentAnalyticsEvents.USER_LOGIN, {
+        email: accountInfo.email,
+        username: accountInfo.username,
+        planTier: accountInfo.planTier,
+      });
+    }
 
     const settings = await this.localStorageService.get('settings');
     
     if (!settings) {
       await this.localStorageService.put('settings', {
         options: {
-          executeSummariesAfter: 6, // 24 hours
-          deleteDataEvery: 3, // 3 days
+          executeSummariesAfter: 24, // 24 hours
+          deleteDataEvery: 7, // 3 days
           forwardMinkDigestToEmail: true, // true
-          maxAllowedLinksPerDay: 100,
+          maxAllowedLinksPerDay: 50,
           shouldIgnoreSocialMediaPlatforms: true,
           startTrackingSessionAfter: 3, // 3 minutes
           ignoredWebsiteList: [],
