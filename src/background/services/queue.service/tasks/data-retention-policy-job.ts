@@ -41,7 +41,11 @@ export class DataRetentionPolicyJob extends Task<string> {
                 timestamp: new Date().toISOString(),
             });
             await databaseService.db.PageData.clear();
-            await databaseService.db.SummaryResults.clear();
+
+            // skip deleting summary results for now until
+            // we have a good way to monitor the summaries for
+            // paywalls
+            // await databaseService.db.SummaryResults.clear();
             console.log('Data retention policy cleaned up');
         } catch (error) {
             sentryScope.captureException(error);

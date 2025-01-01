@@ -2,6 +2,7 @@ import { sendToBackground } from '@plasmohq/messaging';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface User {
+  id: string;
   email: string;
   llmApiKey: string;
   llmPlatform: string;
