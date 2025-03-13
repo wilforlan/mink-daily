@@ -10,8 +10,10 @@ export * from './user.service';
 export * from './local-storage.service';
 
 export const databaseService = new DatabaseService();
+export const supabaseService = new SupabaseService();
+
 export const localStorageService = new LocalStorageService<LocalStorageMetadata>();
-export const userService = new UserService(localStorageService, databaseService);
+export const userService = new UserService(localStorageService, databaseService, supabaseService);
 
 export const queueService = new QueueService(userService, localStorageService);
 export const minkService = new MinkService(
@@ -21,11 +23,13 @@ export const minkService = new MinkService(
     databaseService 
 );
 
-export const supabaseService = new SupabaseService();
 
 export const billingService = new BillingService(
     localStorageService,
-    databaseService,
-    supabaseService
+    databaseService
 );
+
+// Import and export the journey service
+import { journeyService } from './journey.service';
+export { journeyService };
 

@@ -56,6 +56,44 @@ interface Notification {
   isRead: string;
 }
 
+interface JourneyJob {
+  id: string;
+  userId: string;
+  url: string;
+  domain: string;
+  title: string;
+  direction: string;
+  content: string;
+  highlights: string;
+  keyPoints: string;
+  pros: string;
+  cons: string;
+  statistics: string;
+  steps: string;
+  relevanceScore: number;
+  readingDepth: string;
+  contextualInsight: string;
+  connections: string;
+  badges: string;
+  timestamp: number;
+  cost: Cost;
+  createdAt: Date;
+  updatedAt: Date;
+  createAtTs: number;
+  updatedAtTs: number;
+  status: "pending" | "processing" | "completed" | "error";
+  error?: string;
+  journeyContext?: {
+    position: number;
+    totalPages: number;
+    theme: string;
+    progress: {
+      percentage: number;
+      description: string;
+    };
+  };
+}
+
 export class Database extends Dexie {
   public PageData!: Table<PageData>;
 
@@ -64,14 +102,17 @@ export class Database extends Dexie {
   public ChatMessages!: Table<ChatMessages>;
 
   public Notifications!: Table<Notification>;
+  
+  public JourneyJobs!: Table<JourneyJob>;
 
   constructor() {
     super('mink-db');
-    this.version(6).stores({
+    this.version(7).stores({
       SummaryResults: '++id, summary, analytics, insights, suggestions, createdAt, updatedAt, createAtTs, updatedAtTs, cost, hasSentEmail',
       ChatMessages: '++id, role, content, createdAt, updatedAt',
       PageData: '++id, title, url, content, description, isProcessed, createdAt, updatedAt, origin, contentSummary, createAtTs, updatedAtTs',
       Notifications: '++id, notificationId, title, body, endTime, createdAt, updatedAt, isRead',
+      JourneyJobs: '++id, userId, url, domain, title, direction, relevanceScore, readingDepth, timestamp, createdAt, updatedAt, createAtTs, updatedAtTs, status',
     });
   }
 }

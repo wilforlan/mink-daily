@@ -15,6 +15,7 @@ import OpenAIService from './openai.service';
 import { queueService } from '.';
 import type { DatabaseService } from './database.service';
 import { scope, scope as sentryScope } from '@/src/lib/sentry';
+import type { SupabaseService } from './supabase.service';
 
 scope.setTag('service', 'user.service.ts');
 
@@ -27,12 +28,18 @@ const validateEmail = (email: string) => {
 export class UserService {
   constructor(
     private readonly localStorageService: LocalStorageService<LocalStorageMetadata>,
-    private readonly databaseService: DatabaseService
+    private readonly databaseService: DatabaseService,
+    private readonly supabaseService: SupabaseService
   ) {}
 
   async getAccountInfo() {
+    const currentUser = await this.supabaseService.getCurrentLoggedInUser();
     const user = await this.localStorageService.get('user');
-    return user;
+
+    return {
+      ...currentUser.user.user_metadata,
+      ...user,
+    };
   }
 
   async setAccountInfo(accountInfo: ILoginUserRes) {

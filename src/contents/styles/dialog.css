@@ -1,0 +1,946 @@
+:root {
+  --mink-primary: #22c55e;
+  --mink-primary-rgb: 34, 197, 94;
+}
+
+/* Add a global style for the shadow root container to ensure it doesn't block interactions when hidden */
+#plasmo-shadow-container {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999999997;
+}
+
+/* Ensure elements inside the shadow root can still receive pointer events when visible */
+#plasmo-root {
+  pointer-events: none;
+}
+
+/* When the app is inactive, ensure nothing blocks the page */
+#plasmo-root.mink-inactive {
+  pointer-events: none;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* When active, allow pointer events on specific elements */
+#plasmo-root.mink-active {
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* Only elements that need interaction should have pointer-events: auto */
+.mink-fab, 
+.mink-dialog.visible,
+.mink-dialog.visible * {
+  pointer-events: auto;
+}
+
+.mink-dialog.hidden {
+  display: none;
+}
+
+.mink-dialog {
+  position: fixed;
+  bottom: 100px;
+  left: 20px;
+  width: 320px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  z-index: 999999998;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  pointer-events: none;
+  display: none;
+}
+
+.mink-dialog.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  display: block;
+}
+
+.mink-dialog.dragging {
+  transition: none;
+  opacity: 0.9;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  user-select: none;
+}
+
+.mink-dialog-header {
+  padding: 16px;
+  padding-top: 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative;
+  cursor: default;
+}
+
+.mink-drag-handle {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  cursor: default;
+}
+
+.mink-drag-handle:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.mink-dialog-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.mink-user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.mink-user-email {
+  color: #374151;
+  font-weight: 450;
+}
+
+.mink-user-plan {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.mink-usage-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 3px;
+  text-align: right;
+  opacity: 0.8;
+}
+
+.mink-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.mink-stat {
+  color: #4b5563;
+  font-size: 10px;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.mink-stat-separator {
+  display: inline-block;
+  margin: 0 4px;
+  opacity: 0.5;
+}
+
+.mink-progress-bar {
+  height: 3px;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.mink-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.mink-dialog-content {
+  padding: 16px;
+  max-height: 380px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.mink-dialog-content.hidden {
+  display: none;
+}
+
+.mink-dialog-content.visible {
+  display: flex;
+}
+
+.mink-dialog-content::-webkit-scrollbar {
+  width: 3px;
+}
+
+.mink-dialog-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mink-dialog-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.mink-input-container {
+  width: 90%;
+  position: relative;
+  margin-bottom: 12px;
+  width: 90%;
+}
+
+.mink-input {
+  width: 90%;
+  padding: 10px 40px 10px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.mink-input:focus {
+  outline: none;
+  border-color: #22c55e;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+.mink-input::placeholder {
+  color: #9ca3af;
+  font-weight: 450;
+}
+
+.mink-send-button {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 6px;
+  background: #22c55e;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.mink-send-button:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.02);
+}
+
+.mink-journey-card {
+  width: 90%;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.mink-journey-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.mink-journey-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.01em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mink-edit-button {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #6b7280;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.mink-edit-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #111827;
+}
+
+.mink-edit-button:active {
+  transform: scale(0.95);
+}
+
+.mink-direction-expiry {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 6px;
+  font-style: italic;
+}
+
+.mink-journey-content {
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.5;
+  font-weight: 450;
+}
+
+.mink-highlight {
+  display: inline-block;
+  background: rgba(34, 197, 94, 0.1);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: #15803d;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  margin: 2px;
+}
+
+.mink-badge {
+  display: inline-block;
+  padding: 3px 6px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 6px;
+  font-size: 10px;
+  color: #4b5563;
+  margin: 2px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.mink-info-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 90%;
+}
+
+.mink-info-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.mink-info-card:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.mink-info-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #16a34a;
+}
+
+.mink-info-content {
+  flex: 1;
+}
+
+.mink-info-content h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.01em;
+}
+
+.mink-info-content p {
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+  font-weight: 450;
+}
+
+.mink-example-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mink-example-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  font-size: 11px;
+  color: #374151;
+  font-weight: 450;
+}
+
+.mink-example-card svg {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.mink-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mink-features-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #374151;
+  font-weight: 450;
+}
+
+.mink-features-list svg {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.mink-relevance-score {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 2px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.mink-score-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.mink-context {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+.mink-summary-section {
+  margin: 12px 0;
+}
+
+.mink-summary-section h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.01em;
+}
+
+.mink-summary-section ul,
+.mink-summary-section ol {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.mink-summary-section li {
+  font-size: 11px;
+  color: #4b5563;
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.mink-pros-cons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mink-pros h4 {
+  color: #16a34a;
+}
+
+.mink-cons h4 {
+  color: #dc2626;
+}
+
+.mink-statistics li {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.mink-steps li {
+  margin-bottom: 8px;
+}
+
+.mink-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.mink-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.mink-dialog-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.mink-close-button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #6b7280;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.mink-close-button:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+  color: #111827;
+}
+
+.mink-close-button:active {
+  transform: scale(0.95);
+}
+
+.mink-run-frequency {
+  padding: 4px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  font-size: 11px;
+  color: #374151;
+  background: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 150px;
+  margin-top: 4px;
+}
+
+.mink-run-frequency:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.mink-run-frequency:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
+}
+
+.mink-run-frequency:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.mink-run-frequency-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Add styles for the upgrade section */
+.mink-upgrade-section {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: rgba(var(--mink-primary-rgb), 0.1);
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid rgba(var(--mink-primary-rgb), 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.mink-upgrade-section p {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.mink-limit-progress {
+  margin: 10px 0 5px;
+}
+
+.mink-upgrade-button {
+  margin-top: 10px !important;
+  padding: 8px 16px !important;
+  background-color: var(--mink-primary) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 4px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s !important;
+  display: inline-block !important;
+  text-align: center !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  position: relative !important;
+  z-index: 10 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.mink-upgrade-button:hover {
+  background-color: rgba(var(--mink-primary-rgb), 0.8) !important;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+.mink-small-upgrade-button {
+  margin-top: 0 !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  margin-left: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.mink-reset-info {
+  font-size: 9px;
+  color: #6b7280;
+  text-align: right;
+  margin-top: 2px;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.mink-limit-reset-info {
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 10px;
+}
+
+.mink-support-text {
+  font-size: 10px;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  font-style: italic;
+}
+
+.mink-journey-context {
+  margin: 12px 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.mink-journey-progress-bar {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.mink-journey-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.mink-journey-theme {
+  font-size: 11px;
+  color: #4b5563;
+  font-weight: 450;
+}
+
+.mink-entry-insights {
+  margin: 12px 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.mink-insight-section {
+  margin-bottom: 8px;
+}
+
+.mink-insight-section:last-child {
+  margin-bottom: 0;
+}
+
+.mink-insight-section h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.mink-insight-section ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.mink-insight-section li {
+  font-size: 11px;
+  color: #4b5563;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.mink-entry-connections {
+  margin: 12px 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.mink-connection-section {
+  margin-bottom: 8px;
+}
+
+.mink-connection-section:last-child {
+  margin-bottom: 0;
+}
+
+.mink-connection-section h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.mink-connection-section ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.mink-connection-section li {
+  font-size: 11px;
+  color: #4b5563;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.mink-related-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.mink-topic-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 4px;
+  color: #15803d;
+  font-size: 10px;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+}
+
+.mink-journey-progress {
+  display: inline-block;
+  font-size: 10px;
+  color: #6b7280;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+/* Journey Map Styles */
+.mink-journey-map {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.mink-journey-map-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 12px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mink-journey-map-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 10px 0;
+}
+
+.mink-journey-map-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.mink-journey-map-stat {
+  flex: 1;
+  min-width: 80px;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  text-align: center;
+}
+
+.mink-journey-map-stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #22c55e;
+  margin-bottom: 4px;
+}
+
+.mink-journey-map-stat-label {
+  font-size: 10px;
+  color: #6b7280;
+}
+
+.mink-journey-map-progress {
+  margin-bottom: 15px;
+}
+
+.mink-journey-map-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.mink-journey-map-progress-bar {
+  height: 6px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mink-journey-map-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.mink-journey-map-domains {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.mink-journey-map-domain {
+  font-size: 10px;
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.mink-journey-map-insights {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #4b5563;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.mink-journey-map-empty {
+  text-align: center;
+  padding: 20px;
+  color: #6b7280;
+  font-size: 12px;
+  font-style: italic;
+} 
