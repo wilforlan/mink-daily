@@ -1176,6 +1176,27 @@ function MinkPageAppContent() {
     }
   }, [dialogRef.current, dialogHeaderRef.current]);
 
+  // Directly manipulate the shadow root container's pointer-events style
+  useEffect(() => {
+    const shadowContainer = document.getElementById('plasmo-shadow-container');
+    if (shadowContainer) {
+      if (isDialogVisible) {
+        // When dialog is visible, allow pointer events only on specific elements
+        shadowContainer.style.pointerEvents = 'none';
+        shadowContainer.style.width = '100%';
+        shadowContainer.style.height = '100%';
+        shadowContainer.style.visibility = 'visible';
+      } else {
+        // When dialog is hidden, ensure shadow root doesn't block any interactions
+        shadowContainer.style.pointerEvents = 'none';
+        // Set width and height to 0 to ensure it doesn't block any interactions
+        shadowContainer.style.width = '0';
+        shadowContainer.style.height = '0';
+        shadowContainer.style.visibility = 'hidden';
+      }
+    }
+  }, [isDialogVisible]);
+
   const renderJourneyMap = () => {
     if (journeyMap.length === 0) {
       return (
@@ -1300,7 +1321,7 @@ function MinkPageAppContent() {
   };
 
   return (
-    <div id="plasmo-root">
+    <div id="plasmo-root" className={isDialogVisible ? 'mink-active' : 'mink-inactive'}>
       <button 
         onClick={handleClick}
         className={`mink-fab ${isProcessing ? 'processing' : ''} ${settings?.options?.minkRunFrequency === 'manual' ? 'manual-mode' : ''} ${isDragging ? 'dragging' : ''}`}
@@ -1310,7 +1331,7 @@ function MinkPageAppContent() {
         <img src={minkIcon} alt="Mink" draggable="false" />
       </button>
 
-      <div className={`mink-dialog ${isDialogVisible ? 'visible' : ''}`} ref={dialogRef}>
+      <div className={`mink-dialog ${isDialogVisible ? 'visible' : 'hidden'}`} ref={dialogRef}>
         <div className="mink-dialog-header" ref={dialogHeaderRef}>
           <div className="mink-drag-handle"></div>
           <h2 className="mink-dialog-title">
@@ -1406,7 +1427,7 @@ function MinkPageAppContent() {
             </div>
           </div>
         </div>
-        <div className="mink-dialog-content">
+        <div className={`mink-dialog-content ${isDialogVisible ? 'visible' : 'hidden'}`}>
           {!direction ? (
             <>
               <div className="mink-input-container">

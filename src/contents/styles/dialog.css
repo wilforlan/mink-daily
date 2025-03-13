@@ -3,6 +3,48 @@
   --mink-primary-rgb: 34, 197, 94;
 }
 
+/* Add a global style for the shadow root container to ensure it doesn't block interactions when hidden */
+#plasmo-shadow-container {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999999997;
+}
+
+/* Ensure elements inside the shadow root can still receive pointer events when visible */
+#plasmo-root {
+  pointer-events: none;
+}
+
+/* When the app is inactive, ensure nothing blocks the page */
+#plasmo-root.mink-inactive {
+  pointer-events: none;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* When active, allow pointer events on specific elements */
+#plasmo-root.mink-active {
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* Only elements that need interaction should have pointer-events: auto */
+.mink-fab, 
+.mink-dialog.visible,
+.mink-dialog.visible * {
+  pointer-events: auto;
+}
+
+.mink-dialog.hidden {
+  display: none;
+}
+
 .mink-dialog {
   position: fixed;
   bottom: 100px;
@@ -20,12 +62,14 @@
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid rgba(0, 0, 0, 0.03);
   pointer-events: none;
+  display: none;
 }
 
 .mink-dialog.visible {
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
+  display: block;
 }
 
 .mink-dialog.dragging {
@@ -153,6 +197,14 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
+}
+
+.mink-dialog-content.hidden {
+  display: none;
+}
+
+.mink-dialog-content.visible {
+  display: flex;
 }
 
 .mink-dialog-content::-webkit-scrollbar {
