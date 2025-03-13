@@ -21,6 +21,7 @@
     "@react-oauth/google": "^0.12.1",
     "@sentry/react": "^8.37.1",
     "@supabase/supabase-js": "^2.47.3",
+    "@types/styled-components": "^5.1.34",
     "dexie": "^4.0.8",
     "firebase": "^10.14.1",
     "gpt-3-encoder": "^1.1.4",
@@ -32,6 +33,7 @@
     "react-dom": "18.2.0",
     "react-markdown": "^9.0.1",
     "semver": "^7.6.3",
+    "styled-components": "^6.1.15",
     "tokenizr": "^1.7.0",
     "uuid": "^10.0.0"
   },
