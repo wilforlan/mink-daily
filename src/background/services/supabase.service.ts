@@ -1,5 +1,6 @@
 import { supabase } from "@/src/core/supabase";
 import { isProduction } from "@/src/misc";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const PRODUCT_ID = isProduction ? "prod_ROXiGSyZunDCn7" : "prod_ROnNOYwZyE174G"
 
