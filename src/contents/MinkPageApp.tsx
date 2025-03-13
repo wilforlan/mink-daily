@@ -10,6 +10,7 @@ import { ApplicationContainer } from "../components/ApplicationContainer"
 import { useUser } from "../providers/user.provider"
 import { sendToBackground } from "@plasmohq/messaging"
 import { isProduction } from "../misc/constants"
+import { draggableElement } from "../misc/draggable"
 
 // This tells Plasmo to inject these styles into the content script
 export const getStyle: PlasmoGetStyle = () => {
@@ -43,11 +44,30 @@ interface JourneyEntry {
     cons: string[]
     statistics: string[]
     steps?: string[]
+    connections?: {
+      previousPages: string[]
+      nextPages: string[]
+      relatedTopics: string[]
+    }
   }
   relevanceScore: number
   context: {
     relationToDirection: string
     previousPageConnections?: string[]
+    journeyContext?: {
+      position: number
+      totalPages: number
+      theme: string
+      progress: {
+        percentage: number
+        description: string
+      }
+    }
+    insights?: {
+      patterns: string[]
+      learnings: string[]
+      recommendations: string[]
+    }
   }
 }
 
@@ -62,10 +82,16 @@ function MinkPageAppContent() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [usageStats, setUsageStats] = useState<any>(null)
   const [directionExpiry, setDirectionExpiry] = useState<number | null>(null)
+  const [journeyMap, setJourneyMap] = useState<any[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
   const lastUrlRef = useRef<string>("")
   // Track URLs that are currently being processed to prevent duplicate entries
   const processingUrlRef = useRef<string>("")
+  // Refs for draggable elements
+  const fabRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const dialogHeaderRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   const getUsageStats = async () => {
     if (user) {
@@ -78,6 +104,24 @@ function MinkPageAppContent() {
     }
     return null
   }
+
+  // Fetch journey map data
+  const getJourneyMap = async () => {
+    try {
+      const response = await sendToBackground({
+        name: "get-journey-map"
+      });
+      
+      if (response.status && response.journeyMap) {
+        setJourneyMap(response.journeyMap);
+        return response.journeyMap;
+      }
+      return [];
+    } catch (error) {
+      console.error("Error fetching journey map:", error);
+      return [];
+    }
+  };
 
   // Load saved direction and expiry time from storage
   useEffect(() => {
@@ -129,6 +173,18 @@ function MinkPageAppContent() {
 
   const handleClick = () => {
     setIsDialogVisible(!isDialogVisible)
+    
+    // // If run frequency is set to manual and we have a direction, process the current page
+    // const runFrequency = settings?.options?.minkRunFrequency
+    // if (runFrequency === "manual" && direction && !isProcessing) {
+    //   // Check if we already have an entry for this URL
+    //   const urlAlreadyProcessed = journeyEntries.some(entry => entry.url === window.location.href)
+      
+    //   // Only process if we haven't processed this URL yet or if the dialog is not visible
+    //   if (!urlAlreadyProcessed || !isDialogVisible) {
+    //     processCurrentPage()
+    //   }
+    // }
   }
 
   const handleSendDirection = async () => {
@@ -208,7 +264,7 @@ function MinkPageAppContent() {
         
         // Create a limit reached entry
         const limitReachedEntry: JourneyEntry = {
-          title: document.title,
+          title: document.title || "Limit Reached",
           url: window.location.href,
           content: "Daily journey limit reached. Upgrade to Pro for more journeys.",
           highlights: ["You've reached your daily journey limit"],
@@ -218,11 +274,31 @@ function MinkPageAppContent() {
             keyPoints: ["Upgrade to Pro for up to 100 journeys per day"],
             pros: [],
             cons: [],
-            statistics: []
+            statistics: [],
+            connections: {
+              previousPages: [],
+              nextPages: [],
+              relatedTopics: []
+            }
           },
           relevanceScore: 0,
           context: {
-            relationToDirection: "Cannot process due to daily limit"
+            relationToDirection: "Cannot process due to daily limit",
+            previousPageConnections: [],
+            journeyContext: {
+              position: 0,
+              totalPages: 0,
+              theme: "",
+              progress: {
+                percentage: 0,
+                description: ""
+              }
+            },
+            insights: {
+              patterns: [],
+              learnings: [],
+              recommendations: []
+            }
           }
         }
         
@@ -299,7 +375,7 @@ function MinkPageAppContent() {
 
     // Create initial entry
     const newEntry: JourneyEntry = {
-      title: pageTitle,
+      title: pageTitle || "Untitled Page",
       url: window.location.href,
       content: "Processing page content...",
       highlights: ["Analyzing content...", "Generating insights..."],
@@ -309,11 +385,31 @@ function MinkPageAppContent() {
         keyPoints: [],
         pros: [],
         cons: [],
-        statistics: []
+        statistics: [],
+        connections: {
+          previousPages: [],
+          nextPages: [],
+          relatedTopics: []
+        }
       },
       relevanceScore: 0,
       context: {
-        relationToDirection: "Analyzing relevance to your direction..."
+        relationToDirection: "Analyzing relevance to your direction...",
+        previousPageConnections: [],
+        journeyContext: {
+          position: 0,
+          totalPages: 0,
+          theme: "",
+          progress: {
+            percentage: 0,
+            description: ""
+          }
+        },
+        insights: {
+          patterns: [],
+          learnings: [],
+          recommendations: []
+        }
       }
     }
 
@@ -347,7 +443,18 @@ function MinkPageAppContent() {
             direction,
             url: window.location.href,
             title: pageTitle,
-            previousEntries: journeyEntries.slice(0, 5) // Send last 5 entries for context
+            previousEntries: journeyEntries.slice(0, 5), // Send last 5 entries for context
+            journeyContext: {
+              position: journeyEntries.length + 1,
+              totalPages: journeyEntries.length + 10, // Estimate total pages
+              theme: direction,
+              progress: {
+                percentage: Math.round((journeyEntries.length / (journeyEntries.length + 10)) * 100),
+                description: journeyEntries.length === 0 
+                  ? "Just starting your journey" 
+                  : `Making progress on ${direction}`
+              }
+            }
           }
         })
 
@@ -361,7 +468,7 @@ function MinkPageAppContent() {
         })
 
         // Poll for updates if the entry is still processing
-        if (response.badges && response.badges.includes("Processing")) {
+        if (response.badges && Array.isArray(response.badges) && response.badges.includes("Processing")) {
           const pollInterval = setInterval(async () => {
             try {
               const updatedEntry = await sendToBackground({
@@ -371,7 +478,8 @@ function MinkPageAppContent() {
                 }
               }).catch(() => null);
 
-              if (updatedEntry && !updatedEntry.error && !updatedEntry.badges.includes("Processing")) {
+              if (updatedEntry && !updatedEntry.error && 
+                  (!updatedEntry.badges || !Array.isArray(updatedEntry.badges) || !updatedEntry.badges.includes("Processing"))) {
                 // Update entry with processed content
                 setJourneyEntries(prev => {
                   const updated = [...prev]
@@ -400,6 +508,7 @@ function MinkPageAppContent() {
         if (updated[0]?.url === window.location.href) {
           updated[0] = {
             ...updated[0],
+            title: updated[0].title || document.title || "Error Page",
             content: "Could not process page content. Please try again.",
             highlights: ["Error processing content"],
             badges: ["Error"],
@@ -407,11 +516,31 @@ function MinkPageAppContent() {
               keyPoints: [],
               pros: [],
               cons: [],
-              statistics: []
+              statistics: [],
+              connections: {
+                previousPages: [],
+                nextPages: [],
+                relatedTopics: []
+              }
             },
             relevanceScore: 0,
             context: {
-              relationToDirection: "Could not analyze relevance"
+              relationToDirection: "Could not analyze relevance",
+              previousPageConnections: [],
+              journeyContext: {
+                position: 0,
+                totalPages: 0,
+                theme: "",
+                progress: {
+                  percentage: 0,
+                  description: ""
+                }
+              },
+              insights: {
+                patterns: [],
+                learnings: [],
+                recommendations: []
+              }
             }
           }
         }
@@ -446,6 +575,13 @@ function MinkPageAppContent() {
       
       if (window.location.href !== lastUrlRef.current) {
         const runFrequency = settings?.options?.minkRunFrequency || "per-domain"
+        
+        // Skip automatic processing if run frequency is set to manual
+        if (runFrequency === "manual") {
+          // Just update the lastUrlRef but don't process
+          lastUrlRef.current = window.location.href
+          return
+        }
         
         // Check if we already have an entry for this URL
         const urlAlreadyProcessed = journeyEntries.some(entry => entry.url === window.location.href)
@@ -512,6 +648,13 @@ function MinkPageAppContent() {
       // Check if we should show the dialog based on run frequency setting
       const runFrequency = settings?.options?.minkRunFrequency || "per-domain"
       
+      // Skip automatic processing if run frequency is set to manual
+      if (runFrequency === "manual") {
+        // Just show the dialog but don't process automatically
+        setIsDialogVisible(false)
+        return
+      }
+      
       if (runFrequency === "per-domain") {
         // Check if we already have results for this domain
         try {
@@ -554,14 +697,26 @@ function MinkPageAppContent() {
     console.log('Mink Page App initialized')
   }, [])
 
+  // Refresh usage stats and journey map periodically
   useEffect(() => {
-    getUsageStats()
+    getUsageStats();
+    getJourneyMap();
     
-    // Refresh usage stats every minute
-    const intervalId = setInterval(getUsageStats, 60000)
+    // Refresh data every minute
+    const intervalId = setInterval(() => {
+      getUsageStats();
+      getJourneyMap();
+    }, 60000);
     
-    return () => clearInterval(intervalId)
-  }, [user])
+    return () => clearInterval(intervalId);
+  }, [user]);
+
+  // Update journey map after processing a page
+  useEffect(() => {
+    if (!isProcessing && journeyEntries.length > 0) {
+      getJourneyMap();
+    }
+  }, [isProcessing, journeyEntries.length]);
 
   // Handle run frequency changes
   useEffect(() => {
@@ -572,6 +727,13 @@ function MinkPageAppContent() {
     
     // Skip if we're already processing this URL
     if (processingUrlRef.current === window.location.href) {
+      return
+    }
+    
+    // Skip automatic processing if run frequency is set to manual
+    if (runFrequency === "manual") {
+      // Just show the dialog but don't process automatically
+      setIsDialogVisible(false)
       return
     }
     
@@ -713,7 +875,14 @@ function MinkPageAppContent() {
 
   const renderJourneyEntry = (entry: JourneyEntry) => (
     <div key={entry.timestamp} className="mink-journey-card">
-      <div className="mink-journey-title">{entry.title}</div>
+      <div className="mink-journey-title">
+        {entry.title}
+        {entry.context.journeyContext && entry.context.journeyContext.position > 0 && (
+          <span className="mink-journey-progress">
+            Page {entry.context.journeyContext.position}/{entry.context.journeyContext.totalPages}
+          </span>
+        )}
+      </div>
       <div className="mink-journey-content">
         <div className="mink-relevance-score">
           <div 
@@ -727,12 +896,12 @@ function MinkPageAppContent() {
         </div>
 
         <div className="mink-badges">
-          {entry.badges.map((badge, i) => (
+          {Array.isArray(entry.badges) ? entry.badges.map((badge, i) => (
             <span key={i} className="mink-badge">{badge}</span>
-          ))}
+          )) : null}
         </div>
 
-        {entry.badges.includes("Limit Reached") && (
+        {Array.isArray(entry.badges) && entry.badges.includes("Limit Reached") && (
           <div className="mink-upgrade-section">
             <p>You've reached your daily limit of {usageStats?.journey_stats?.journeys_allowed || 10} journeys.</p>
             <div className="mink-progress-bar mink-limit-progress">
@@ -762,7 +931,100 @@ function MinkPageAppContent() {
           </div>
         )}
 
-        {entry.summary.keyPoints.length > 0 && (
+        {/* Journey Context Section */}
+        {entry.context.journeyContext && entry.context.journeyContext.position > 0 && (
+          <div className="mink-journey-context">
+            <div className="mink-journey-progress-bar">
+              <div 
+                className="mink-journey-progress-fill" 
+                style={{ width: `${entry.context.journeyContext.progress.percentage}%` }}
+              />
+            </div>
+            <div className="mink-journey-theme">
+              <strong>Theme:</strong> {entry.context.journeyContext.theme}
+              <div>{entry.context.journeyContext.progress.description}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Insights Section */}
+        {entry.context.insights && 
+          Array.isArray(entry.context.insights.patterns) && 
+          Array.isArray(entry.context.insights.learnings) && 
+          Array.isArray(entry.context.insights.recommendations) && (
+          entry.context.insights.patterns.length > 0 || 
+          entry.context.insights.learnings.length > 0 || 
+          entry.context.insights.recommendations.length > 0
+        ) && (
+          <div className="mink-entry-insights">
+            {Array.isArray(entry.context.insights.patterns) && entry.context.insights.patterns.length > 0 && (
+              <div className="mink-insight-section">
+                <h4>Patterns</h4>
+                <ul>
+                  {entry.context.insights.patterns.map((pattern, i) => (
+                    <li key={i}>{pattern}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {Array.isArray(entry.context.insights.learnings) && entry.context.insights.learnings.length > 0 && (
+              <div className="mink-insight-section">
+                <h4>Key Learnings</h4>
+                <ul>
+                  {entry.context.insights.learnings.map((learning, i) => (
+                    <li key={i}>{learning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {Array.isArray(entry.context.insights.recommendations) && entry.context.insights.recommendations.length > 0 && (
+              <div className="mink-insight-section">
+                <h4>Recommendations</h4>
+                <ul>
+                  {entry.context.insights.recommendations.map((recommendation, i) => (
+                    <li key={i}>{recommendation}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Connections Section */}
+        {entry.summary.connections && 
+          Array.isArray(entry.summary.connections.previousPages) && 
+          Array.isArray(entry.summary.connections.relatedTopics) && (
+          (entry.summary.connections.previousPages.length > 0 || 
+           entry.summary.connections.relatedTopics.length > 0)
+        ) && (
+          <div className="mink-entry-connections">
+            {Array.isArray(entry.summary.connections.previousPages) && entry.summary.connections.previousPages.length > 0 && (
+              <div className="mink-connection-section">
+                <h4>Connected to Previous Pages</h4>
+                <ul>
+                  {entry.summary.connections.previousPages.map((page, i) => (
+                    <li key={i}>{page}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {Array.isArray(entry.summary.connections.relatedTopics) && entry.summary.connections.relatedTopics.length > 0 && (
+              <div className="mink-connection-section">
+                <h4>Related Topics</h4>
+                <div className="mink-related-topics">
+                  {entry.summary.connections.relatedTopics.map((topic, i) => (
+                    <span key={i} className="mink-topic-tag">{topic}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {entry.summary.keyPoints && Array.isArray(entry.summary.keyPoints) && entry.summary.keyPoints.length > 0 && (
           <div className="mink-summary-section">
             <h4>Key Points</h4>
             <ul>
@@ -773,10 +1035,11 @@ function MinkPageAppContent() {
           </div>
         )}
 
-        {(entry.summary.pros.length > 0 || entry.summary.cons.length > 0) && (
+        {(entry.summary.pros && Array.isArray(entry.summary.pros) && entry.summary.pros.length > 0 || 
+          entry.summary.cons && Array.isArray(entry.summary.cons) && entry.summary.cons.length > 0) && (
           <div className="mink-summary-section">
             <div className="mink-pros-cons">
-              {entry.summary.pros.length > 0 && (
+              {entry.summary.pros && Array.isArray(entry.summary.pros) && entry.summary.pros.length > 0 && (
                 <div className="mink-pros">
                   <h4>Pros</h4>
                   <ul>
@@ -786,7 +1049,7 @@ function MinkPageAppContent() {
                   </ul>
                 </div>
               )}
-              {entry.summary.cons.length > 0 && (
+              {entry.summary.cons && Array.isArray(entry.summary.cons) && entry.summary.cons.length > 0 && (
                 <div className="mink-cons">
                   <h4>Cons</h4>
                   <ul>
@@ -800,7 +1063,7 @@ function MinkPageAppContent() {
           </div>
         )}
 
-        {entry.summary.statistics.length > 0 && (
+        {entry.summary.statistics && Array.isArray(entry.summary.statistics) && entry.summary.statistics.length > 0 && (
           <div className="mink-summary-section">
             <h4>Key Statistics</h4>
             <ul className="mink-statistics">
@@ -811,7 +1074,7 @@ function MinkPageAppContent() {
           </div>
         )}
 
-        {entry.summary.steps && entry.summary.steps.length > 0 && (
+        {entry.summary.steps && Array.isArray(entry.summary.steps) && entry.summary.steps.length > 0 && (
           <div className="mink-summary-section">
             <h4>Step-by-Step Guide</h4>
             <ol className="mink-steps">
@@ -823,9 +1086,9 @@ function MinkPageAppContent() {
         )}
 
         <div className="mink-highlights">
-          {entry.highlights.map((highlight, i) => (
+          {Array.isArray(entry.highlights) ? entry.highlights.map((highlight, i) => (
             <span key={i} className="mink-highlight">{highlight}</span>
-          ))}
+          )) : null}
         </div>
 
       </div>
@@ -886,18 +1149,170 @@ function MinkPageAppContent() {
     return () => clearInterval(intervalId)
   }, [])
 
+  // Make FAB button draggable
+  useEffect(() => {
+    if (fabRef.current) {
+      draggableElement(
+        fabRef.current as unknown as HTMLDivElement, 
+        document,
+        () => setIsDragging(true),
+        () => setIsDragging(false)
+      )
+    }
+  }, [fabRef.current])
+
+  // Make dialog panel fixed (not draggable)
+  useEffect(() => {
+    if (dialogRef.current && dialogHeaderRef.current) {
+      // Remove draggability from dialog header
+      const header = dialogHeaderRef.current;
+      header.style.cursor = 'default';
+      
+      // Remove the drag handle's cursor style
+      const dragHandle = header.querySelector('.mink-drag-handle');
+      if (dragHandle) {
+        (dragHandle as HTMLElement).style.cursor = 'default';
+      }
+    }
+  }, [dialogRef.current, dialogHeaderRef.current]);
+
+  const renderJourneyMap = () => {
+    if (journeyMap.length === 0) {
+      return (
+        <div className="mink-journey-map">
+          <div className="mink-journey-map-title">Today's Journey Progress</div>
+          <div className="mink-journey-map-empty">
+            No journeys recorded today. Start exploring to build your journey map!
+          </div>
+        </div>
+      );
+    }
+
+    // Find the current direction's journey data
+    const currentDirectionData = journeyMap.find(item => item.direction === direction);
+    
+    if (!currentDirectionData) {
+      return (
+        <div className="mink-journey-map">
+          <div className="mink-journey-map-title">Today's Journey Progress</div>
+          <div className="mink-journey-map-subtitle">
+            You've explored {journeyMap.reduce((sum, item) => sum + item.jobCount, 0)} pages across {journeyMap.length} different directions today.
+          </div>
+          <div className="mink-journey-map-stats">
+            <div className="mink-journey-map-stat">
+              <div className="mink-journey-map-stat-value">{journeyMap.length}</div>
+              <div className="mink-journey-map-stat-label">Directions</div>
+            </div>
+            <div className="mink-journey-map-stat">
+              <div className="mink-journey-map-stat-value">
+                {journeyMap.reduce((sum, item) => sum + item.jobCount, 0)}
+              </div>
+              <div className="mink-journey-map-stat-label">Pages</div>
+            </div>
+            <div className="mink-journey-map-stat">
+              <div className="mink-journey-map-stat-value">
+                {journeyMap.reduce((sum, item) => sum + item.uniqueDomains, 0)}
+              </div>
+              <div className="mink-journey-map-stat-label">Domains</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Calculate progress percentage based on completed jobs
+    const progressPercentage = Math.round((currentDirectionData.completedJobCount / currentDirectionData.jobCount) * 100);
+    
+    // Generate insights based on the data
+    const generateInsight = () => {
+      if (currentDirectionData.jobCount < 3) {
+        return "Just getting started! Keep exploring to build a more comprehensive journey.";
+      } else if (currentDirectionData.avgRelevanceScore > 0.7) {
+        return "Great progress! You're finding highly relevant content for your direction.";
+      } else if (currentDirectionData.uniqueDomains > 3) {
+        return "You're exploring diverse sources, which helps build a well-rounded understanding.";
+      } else {
+        return "Continue your journey to discover more connections and insights.";
+      }
+    };
+
+    return (
+      <div className="mink-journey-map">
+        <div className="mink-journey-map-title">
+          Today's Journey Progress
+        </div>
+        <div className="mink-journey-map-subtitle">
+          Your progress on "{currentDirectionData.direction}"
+        </div>
+        
+        <div className="mink-journey-map-stats">
+          <div className="mink-journey-map-stat">
+            <div className="mink-journey-map-stat-value">{currentDirectionData.jobCount}</div>
+            <div className="mink-journey-map-stat-label">Pages</div>
+          </div>
+          <div className="mink-journey-map-stat">
+            <div className="mink-journey-map-stat-value">{currentDirectionData.uniqueDomains}</div>
+            <div className="mink-journey-map-stat-label">Domains</div>
+          </div>
+          <div className="mink-journey-map-stat">
+            <div className="mink-journey-map-stat-value">
+              {Math.round(currentDirectionData.avgRelevanceScore * 100)}%
+            </div>
+            <div className="mink-journey-map-stat-label">Relevance</div>
+          </div>
+        </div>
+        
+        <div className="mink-journey-map-progress">
+          <div className="mink-journey-map-progress-label">
+            <span>Progress</span>
+            <span>{progressPercentage}%</span>
+          </div>
+          <div className="mink-journey-map-progress-bar">
+            <div 
+              className="mink-journey-map-progress-fill" 
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+        </div>
+        
+        {currentDirectionData.uniqueDomains > 0 && (
+          <>
+            <div className="mink-journey-map-subtitle">Domains explored:</div>
+            <div className="mink-journey-map-domains">
+              {Array.from(new Set(currentDirectionData.entries.map((entry: JourneyEntry) => {
+                try {
+                  return new URL(entry.url).hostname;
+                } catch (e) {
+                  return "";
+                }
+              }))).filter(Boolean).map((domain: string, index: number) => (
+                <div key={index} className="mink-journey-map-domain">{domain}</div>
+              ))}
+            </div>
+          </>
+        )}
+        
+        <div className="mink-journey-map-insights">
+          {generateInsight()}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div id="plasmo-root">
       <button 
         onClick={handleClick}
-        className={`mink-fab ${isProcessing ? 'processing' : ''}`}
+        className={`mink-fab ${isProcessing ? 'processing' : ''} ${settings?.options?.minkRunFrequency === 'manual' ? 'manual-mode' : ''} ${isDragging ? 'dragging' : ''}`}
+        ref={fabRef}
         aria-label="Mink Assistant"
       >
         <img src={minkIcon} alt="Mink" draggable="false" />
       </button>
 
-      <div className={`mink-dialog ${isDialogVisible ? 'visible' : ''}`}>
-        <div className="mink-dialog-header">
+      <div className={`mink-dialog ${isDialogVisible ? 'visible' : ''}`} ref={dialogRef}>
+        <div className="mink-dialog-header" ref={dialogHeaderRef}>
+          <div className="mink-drag-handle"></div>
           <h2 className="mink-dialog-title">
             {direction ? 'Your Journey' : 'Set Your Direction'}
           </h2>
@@ -986,6 +1401,7 @@ function MinkPageAppContent() {
                 <option value="per-domain">Run once per domain</option>
                 <option value="per-link">Run once per link</option>
                 <option value="always">Run every time</option>
+                <option value="manual">Run manually</option>
               </select>
             </div>
           </div>
@@ -1016,6 +1432,7 @@ function MinkPageAppContent() {
             <>
               {renderJourneyHeader()}
               {journeyEntries.map(entry => renderJourneyEntry(entry))}
+              {renderJourneyMap()}
             </>
           )}
           <div className="mink-support-text">
