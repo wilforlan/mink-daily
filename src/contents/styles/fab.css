@@ -6,7 +6,7 @@
   height: 56px;
   border-radius: 50%;
   background: white;
-  cursor: pointer;
+  cursor: grab;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   z-index: 999999999;
   display: flex;
@@ -18,12 +18,14 @@
   isolation: isolate;
   touch-action: none;
   user-select: none;
+  pointer-events: auto;
 }
 
 .mink-fab.dragging {
   cursor: grabbing;
   transform: scale(1.05);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  z-index: 999999999;
 }
 
 .mink-fab:hover {
@@ -76,6 +78,32 @@
 
 .mink-fab.processing {
   animation: pulse 2s infinite;
+}
+
+.mink-fab.manual-mode {
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+}
+
+.mink-fab.manual-mode::before,
+.mink-fab.manual-mode::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #4ade80;
+  animation: ripple 2s linear infinite;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.mink-fab.manual-mode:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.4);
+}
+
+.mink-fab.manual-mode:hover::before {
+  animation: none;
 }
 
 @keyframes pulse {
