@@ -19,15 +19,25 @@
   transform: translateY(20px) scale(0.98);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid rgba(0, 0, 0, 0.03);
+  pointer-events: none;
 }
 
 .mink-dialog.visible {
   opacity: 1;
   transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.mink-dialog.dragging {
+  transition: none;
+  opacity: 0.9;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  user-select: none;
 }
 
 .mink-dialog-header {
   padding: 16px;
+  padding-top: 20px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
   display: flex;
   align-items: flex-start;
@@ -35,6 +45,24 @@
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  position: relative;
+  cursor: default;
+}
+
+.mink-drag-handle {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  cursor: default;
+}
+
+.mink-drag-handle:hover {
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .mink-dialog-title {
@@ -539,25 +567,6 @@
   display: inline-block;
 }
 
-.mink-run-frequency-container:hover::after {
-  content: "Control when Mink processes pages";
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  white-space: nowrap;
-  z-index: 10;
-  margin-top: 2px;
-}
-
-.mink-run-frequency-container:has(.mink-run-frequency:disabled):hover::after {
-  content: "Cannot change while processing";
-}
-
 /* Add styles for the upgrade section */
 .mink-upgrade-section {
   margin: 15px 0;
@@ -642,5 +651,244 @@
   margin-top: 20px;
   padding-top: 10px;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
+  font-style: italic;
+}
+
+.mink-journey-context {
+  margin: 12px 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.mink-journey-progress-bar {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.mink-journey-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.mink-journey-theme {
+  font-size: 11px;
+  color: #4b5563;
+  font-weight: 450;
+}
+
+.mink-entry-insights {
+  margin: 12px 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.mink-insight-section {
+  margin-bottom: 8px;
+}
+
+.mink-insight-section:last-child {
+  margin-bottom: 0;
+}
+
+.mink-insight-section h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.mink-insight-section ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.mink-insight-section li {
+  font-size: 11px;
+  color: #4b5563;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.mink-entry-connections {
+  margin: 12px 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.mink-connection-section {
+  margin-bottom: 8px;
+}
+
+.mink-connection-section:last-child {
+  margin-bottom: 0;
+}
+
+.mink-connection-section h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.mink-connection-section ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.mink-connection-section li {
+  font-size: 11px;
+  color: #4b5563;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.mink-related-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.mink-topic-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 4px;
+  color: #15803d;
+  font-size: 10px;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+}
+
+.mink-journey-progress {
+  display: inline-block;
+  font-size: 10px;
+  color: #6b7280;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+/* Journey Map Styles */
+.mink-journey-map {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.mink-journey-map-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 12px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mink-journey-map-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 10px 0;
+}
+
+.mink-journey-map-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.mink-journey-map-stat {
+  flex: 1;
+  min-width: 80px;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  text-align: center;
+}
+
+.mink-journey-map-stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #22c55e;
+  margin-bottom: 4px;
+}
+
+.mink-journey-map-stat-label {
+  font-size: 10px;
+  color: #6b7280;
+}
+
+.mink-journey-map-progress {
+  margin-bottom: 15px;
+}
+
+.mink-journey-map-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.mink-journey-map-progress-bar {
+  height: 6px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mink-journey-map-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.mink-journey-map-domains {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.mink-journey-map-domain {
+  font-size: 10px;
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.mink-journey-map-insights {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #4b5563;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.mink-journey-map-empty {
+  text-align: center;
+  padding: 20px;
+  color: #6b7280;
+  font-size: 12px;
   font-style: italic;
 } 
