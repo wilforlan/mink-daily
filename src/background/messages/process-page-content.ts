@@ -9,7 +9,8 @@ const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
       direction: req.body.direction,
       url: req.body.url,
       title: req.body.title,
-      previousEntries: req.body.previousEntries
+      previousEntries: req.body.previousEntries,
+      journeyContext: req.body.journeyContext
     });
 
     // If the job is created successfully, convert it to a journey entry for the UI
@@ -27,11 +28,23 @@ const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
           keyPoints: [],
           pros: [],
           cons: [],
-          statistics: []
+          statistics: [],
+          connections: {
+            previousPages: [],
+            nextPages: [],
+            relatedTopics: []
+          }
         },
         relevanceScore: 0,
         context: {
-          relationToDirection: "Analyzing relevance to your direction..."
+          relationToDirection: "Analyzing relevance to your direction...",
+          previousPageConnections: [],
+          journeyContext: req.body.journeyContext,
+          insights: {
+            patterns: [],
+            learnings: [],
+            recommendations: []
+          }
         }
       };
 
