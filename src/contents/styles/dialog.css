@@ -6,7 +6,7 @@
 /* Add a global style for the shadow root container to ensure it doesn't block interactions when hidden */
 #plasmo-shadow-container {
   pointer-events: none;
-  position: fixed;
+  position: fixed !important;
   top: 0;
   left: 0;
   width: 100%;
