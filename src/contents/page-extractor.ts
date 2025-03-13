@@ -2,16 +2,16 @@ import { sendToBackground } from "@plasmohq/messaging";
 import React, { useEffect, useState } from "react";
 const EXTENSION_ID = chrome.runtime.id;
 import icon from "data-base64:~content-assets/icon.png"
-import { scope as sentryScope } from "./lib/sentry";
+import { scope as sentryScope } from "../lib/sentry";
 
 export { }
 
 sentryScope.setTag("content-script", "true");
 
 export const getShadowHostId = () => "mink-daily-notification"
-import styleText from "data-text:./style.css"
+import styleText from "data-text:../style.css"
 import type { PlasmoCSConfig } from "plasmo"
-import { isProduction } from "./misc";
+import { isProduction } from "../misc";
 
 export const config: PlasmoCSConfig = {
     matches: ["<all_urls>"],
