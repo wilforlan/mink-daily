@@ -25,7 +25,10 @@ export const supabaseService = new SupabaseService();
 
 export const billingService = new BillingService(
     localStorageService,
-    databaseService,
-    supabaseService
+    databaseService
 );
+
+// Import and export the journey service
+import { journeyService } from './journey.service';
+export { journeyService };
 
