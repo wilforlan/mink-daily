@@ -4,9 +4,51 @@ import OpenAIService from "./openai.service"
 interface ProcessPageRequest {
   content: string;
   direction: string;
-  url: string;
-  title: string;
-  previousEntries: any[];
+  currentUrl: string;
+  pageTitle: string;
+  previousEntries: Array<{
+    title: string;
+    content: string;
+    summary: {
+      keyPoints: string[];
+      pros: string[];
+      cons: string[];
+      statistics: string[];
+      steps?: string[];
+      connections?: {
+        previousPages: string[];
+        nextPages: string[];
+        relatedTopics: string[];
+      };
+    };
+    context: {
+      relationToDirection: string;
+      previousPageConnections?: string[];
+      journeyContext?: {
+        position: number;
+        totalPages: number;
+        theme: string;
+        progress: {
+          percentage: number;
+          description: string;
+        };
+      };
+      insights?: {
+        patterns: string[];
+        learnings: string[];
+        recommendations: string[];
+      };
+    };
+  }>;
+  journeyContext: {
+    position: number;
+    totalPages: number;
+    theme: string;
+    progress: {
+      percentage: number;
+      description: string;
+    };
+  };
 }
 
 // Define Cost interface
@@ -48,8 +90,24 @@ class ContentProcessorService {
       // Create system prompt
       const systemPrompt = `You are an AI assistant helping to analyze web content in the context of a user's learning journey.
 Current Direction: "${request.direction}"
-Page Title: "${request.title}"
-URL: ${request.url}
+Page Title: "${request.pageTitle}"
+URL: ${request.currentUrl}
+
+Journey Context:
+- Position: Page ${request.journeyContext.position} of ${request.journeyContext.totalPages}
+- Theme: ${request.journeyContext.theme}
+- Progress: ${request.journeyContext.progress.description} (${request.journeyContext.progress.percentage}% complete)
+
+Previous pages in journey:
+${request.previousEntries.map(entry => {
+  const insights = entry.context.insights ? `
+    Patterns: ${entry.context.insights.patterns.join(', ')}
+    Learnings: ${entry.context.insights.learnings.join(', ')}
+    Recommendations: ${entry.context.insights.recommendations.join(', ')}` : '';
+  return `- ${entry.title}
+    Relevance: ${entry.context.relationToDirection}
+    ${insights}`;
+}).join('\n')}
 
 Your task is to analyze the content and return a JSON response with:
 1. A concise summary
@@ -61,9 +119,10 @@ Your task is to analyze the content and return a JSON response with:
 7. Reading depth classification (Quick Scan/Detailed Read/Deep Dive)
 8. Contextual insight explaining how this fits the direction
 9. Connections to previous pages
-
-Previous pages in journey:
-${request.previousEntries.map(entry => `- ${entry.title}`).join('\n')}
+10. Patterns identified across the journey
+11. Key learnings from this page
+12. Recommendations based on the content
+13. Related topics for further exploration
 
 JSON Response Format:
 {
@@ -77,7 +136,11 @@ JSON Response Format:
   "relevanceScore": "number",
   "readingDepth": "string",
   "contextualInsight": "string",
-  "connections": ["string"]
+  "connections": ["string"],
+  "patterns": ["string"],
+  "learnings": ["string"],
+  "recommendations": ["string"],
+  "relatedTopics": ["string"]
 }
 `;
 
@@ -132,7 +195,11 @@ JSON Response Format:
       cons: Array.isArray(data.cons) ? data.cons : [],
       statistics: Array.isArray(data.statistics) ? data.statistics : [],
       steps: Array.isArray(data.steps) ? data.steps : [],
-      connections: Array.isArray(data.connections) ? data.connections : []
+      connections: Array.isArray(data.connections) ? data.connections : [],
+      patterns: Array.isArray(data.patterns) ? data.patterns : [],
+      learnings: Array.isArray(data.learnings) ? data.learnings : [],
+      recommendations: Array.isArray(data.recommendations) ? data.recommendations : [],
+      relatedTopics: Array.isArray(data.relatedTopics) ? data.relatedTopics : []
       // Cost will be added separately after this method is called
     };
   }
