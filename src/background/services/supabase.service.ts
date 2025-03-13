@@ -38,4 +38,12 @@ export class SupabaseService {
         }
         return data;
     }
+
+    async getCurrentLoggedInUser() {
+        const { data, error } = await this.supabase.auth.getUser();
+        if (error) {
+            throw error;
+        }
+        return data;
+    }
 }
