@@ -9,11 +9,16 @@ import dialogStyles from "data-text:./styles/dialog.css"
 import { ApplicationContainer } from "../components/ApplicationContainer"
 import { useUser } from "../providers/user.provider"
 import { sendToBackground } from "@plasmohq/messaging"
+import { isProduction } from "../misc/constants"
 
 // This tells Plasmo to inject these styles into the content script
 export const getStyle: PlasmoGetStyle = () => {
   const style = document.createElement("style")
   style.textContent = `
+    :root {
+      --mink-primary: #22c55e;
+      --mink-primary-rgb: 34, 197, 94;
+    }
     ${baseStyles}
     ${fabStyles}
     ${dialogStyles}
@@ -61,6 +66,18 @@ function MinkPageAppContent() {
   const lastUrlRef = useRef<string>("")
   // Track URLs that are currently being processed to prevent duplicate entries
   const processingUrlRef = useRef<string>("")
+
+  const getUsageStats = async () => {
+    if (user) {
+      const resp = await sendToBackground({
+        name: "get-usage-stats",
+        body: user,
+      })
+      setUsageStats(resp.stats)
+      return resp.stats
+    }
+    return null
+  }
 
   // Load saved direction and expiry time from storage
   useEffect(() => {
@@ -168,6 +185,52 @@ function MinkPageAppContent() {
     // Prevent duplicate processing of the same URL
     if (processingUrlRef.current === window.location.href) {
       console.log("Already processing this URL, skipping duplicate job")
+      return
+    }
+    
+    // Get usage stats initially
+    const stats = await getUsageStats()
+    console.log("Usage stats:", stats)
+    
+    // Check if the user has reached their daily journey limit
+    if (stats && stats.journey_stats && stats.journey_stats.journeys_remaining <= 0) {
+      console.log("Daily journey limit reached")
+      
+      // Show a message to the user
+      setJourneyEntries(prev => {
+        // Check if we already have an entry for this URL
+        const existingEntryIndex = prev.findIndex(entry => entry.url === window.location.href)
+        
+        if (existingEntryIndex !== -1) {
+          // Don't add a duplicate entry
+          return prev
+        }
+        
+        // Create a limit reached entry
+        const limitReachedEntry: JourneyEntry = {
+          title: document.title,
+          url: window.location.href,
+          content: "Daily journey limit reached. Upgrade to Pro for more journeys.",
+          highlights: ["You've reached your daily journey limit"],
+          badges: ["Limit Reached"],
+          timestamp: Date.now(),
+          summary: {
+            keyPoints: ["Upgrade to Pro for up to 100 journeys per day"],
+            pros: [],
+            cons: [],
+            statistics: []
+          },
+          relevanceScore: 0,
+          context: {
+            relationToDirection: "Cannot process due to daily limit"
+          }
+        }
+        
+        return [limitReachedEntry, ...prev]
+      })
+      
+      // Show the dialog to inform the user
+      setIsDialogVisible(true)
       return
     }
     
@@ -492,16 +555,12 @@ function MinkPageAppContent() {
   }, [])
 
   useEffect(() => {
-    const getUsageStats = async () => {
-      if (user) {
-        const resp = await sendToBackground({
-          name: "get-usage-stats",
-          body: user,
-        })
-        setUsageStats(resp.stats)
-      }
-    }
     getUsageStats()
+    
+    // Refresh usage stats every minute
+    const intervalId = setInterval(getUsageStats, 60000)
+    
+    return () => clearInterval(intervalId)
   }, [user])
 
   // Handle run frequency changes
@@ -565,6 +624,28 @@ function MinkPageAppContent() {
       updateSettings(updatedSettings);
     }
   }, [settings]);
+
+  const handleUpgradeClick = async () => {
+    if (!user) return
+    
+    try {
+      // Initiate checkout checker to periodically check if the user has upgraded
+      await sendToBackground({
+        name: "initiate-checkout-checker",
+        body: user,
+      })
+      
+      // Use the same subscription link as in TopHeader.tsx
+      const subscriptionLink = isProduction
+        ? "https://buy.stripe.com/9AQg1neqrglEe76aEL"
+        : "https://buy.stripe.com/test_4gweVb5HIe7TaAg5kk"
+      
+      // Open the upgrade page with user reference ID and email
+      window.open(`${subscriptionLink}?client_reference_id=${user?.id}&prefilled_email=${user?.email}`, '_blank')
+    } catch (error) {
+      console.error("Error initiating checkout:", error)
+    }
+  }
 
   const renderDirectionInfo = () => (
     <div className="mink-info-container">
@@ -650,6 +731,36 @@ function MinkPageAppContent() {
             <span key={i} className="mink-badge">{badge}</span>
           ))}
         </div>
+
+        {entry.badges.includes("Limit Reached") && (
+          <div className="mink-upgrade-section">
+            <p>You've reached your daily limit of {usageStats?.journey_stats?.journeys_allowed || 10} journeys.</p>
+            <div className="mink-progress-bar mink-limit-progress">
+              <div className="mink-progress-fill" style={{ width: '100%' }}></div>
+            </div>
+            <div className="mink-reset-info mink-limit-reset-info">
+              {resetTimeText}
+            </div>
+            <button 
+              className="mink-upgrade-button"
+              onClick={handleUpgradeClick}
+              style={{
+                backgroundColor: '#22c55e',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginTop: '10px',
+                display: 'inline-block'
+              }}
+            >
+              Upgrade to Pro
+            </button>
+          </div>
+        )}
 
         {entry.summary.keyPoints.length > 0 && (
           <div className="mink-summary-section">
@@ -747,6 +858,34 @@ function MinkPageAppContent() {
     </div>
   )
 
+  // Calculate time until midnight reset
+  const getTimeUntilMidnight = () => {
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0)
+    
+    const hoursUntilMidnight = Math.floor((tomorrow.getTime() - now.getTime()) / (1000 * 60 * 60))
+    const minutesUntilMidnight = Math.floor(((tomorrow.getTime() - now.getTime()) % (1000 * 60 * 60)) / (1000 * 60))
+    
+    if (hoursUntilMidnight > 0) {
+      return `Resets in ${hoursUntilMidnight}h ${minutesUntilMidnight}m`
+    } else {
+      return `Resets in ${minutesUntilMidnight}m`
+    }
+  }
+
+  const [resetTimeText, setResetTimeText] = useState(getTimeUntilMidnight())
+
+  // Update reset time text every minute
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setResetTimeText(getTimeUntilMidnight())
+    }, 60000) // Update every minute
+    
+    return () => clearInterval(intervalId)
+  }, [])
+
   return (
     <div id="plasmo-root">
       <button 
@@ -766,22 +905,51 @@ function MinkPageAppContent() {
             {user && (
               <div className="mink-user-info">
                 <span className="mink-user-email">{user.email}</span>
-                {/* for now we disable the plan tier and usage stats because I do do not want to spook the user with payments yet */}
-                {/* We can start adding payments once we start getting reviews */}
-                {/* <span className="mink-user-plan">{user.planTier || 'Free'}</span>
+                <span className="mink-user-plan">{user.planTier || 'Free'}</span>
                 {usageStats && (
                   <div className="mink-usage-stats">
-                    <span className="mink-stat">
-                      Summaries: {usageStats.summariesUsed || 0}/{usageStats.summariesLimit || 5}
-                    </span>
-                    <span className="mink-stat">
-                      History: {usageStats.daysOfHistory || 0} days
-                    </span>
-                    <span className="mink-stat">
-                      Sites: {usageStats.sitesTracked || 0}/{usageStats.sitesLimit || 10000}
-                    </span>
+                    <div className="mink-stat-row">
+                      <span className="mink-stat">
+                        Journeys: {usageStats.journey_stats?.journeys_used || 0}/{usageStats.journey_stats?.journeys_allowed || 10}
+                        <span className="mink-stat-separator">•</span>
+                        Remaining: {usageStats.journey_stats?.journeys_remaining || 0}
+                      </span>
+                    </div>
+                    <div className="mink-progress-bar">
+                      <div 
+                        className="mink-progress-fill" 
+                        style={{ 
+                          width: `${Math.min(100, (usageStats.journey_stats?.journeys_used / usageStats.journey_stats?.journeys_allowed) * 100 || 0)}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <div>
+                    {(!user.planTier || user.planTier === 'free') && (
+                        <button 
+                          className="mink-upgrade-button mink-small-upgrade-button"
+                          onClick={handleUpgradeClick}
+                          style={{
+                            backgroundColor: '#22c55e',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            marginLeft: '8px',
+                            display: 'inline-block'
+                          }}
+                        >
+                          Upgrade
+                        </button>
+                      )}
+                    </div>
+                    <div className="mink-reset-info">
+                      {resetTimeText}
+                    </div>
                   </div>
-                )} */}
+                )}
               </div>
             )}
             <div className="mink-run-frequency-container">
@@ -850,6 +1018,9 @@ function MinkPageAppContent() {
               {journeyEntries.map(entry => renderJourneyEntry(entry))}
             </>
           )}
+          <div className="mink-support-text">
+            Need help? Reach out to us at support@viroke.com
+          </div>
         </div>
       </div>
     </div>
