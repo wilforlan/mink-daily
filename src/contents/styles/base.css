@@ -1,0 +1,9 @@
+/* Ensure our styles don't affect the page content */
+#plasmo-root {
+  isolation: isolate;
+  pointer-events: none;
+}
+
+#plasmo-root > * {
+  pointer-events: auto;
+} 
