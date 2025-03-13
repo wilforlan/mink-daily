@@ -11,12 +11,19 @@ const PLAN_DETAILS = {
     [PLAN_TIER.FREE]: {
         maxAllowedLinksPerMonth: 10000,
         maxAllowedSummariesPerMonth: 5,
+        maxJourneysPerDay: 10,
     },
     [PLAN_TIER.PRO]: {
         maxAllowedLinksPerMonth: 100000,
         maxAllowedSummariesPerMonth: 60,
+        maxJourneysPerDay: 100,
     },
 }
+
+const BY_PASS_SUBSCRIPTION_CHECK = [
+    "williamscalg@gmail.com",
+    "williams@viroke.com",
+]
 
 const getMonthStartAndEndTs = () => {
     const startDate = new Date();
@@ -65,7 +72,12 @@ export class BillingService {
 
         if (user && planTier === PLAN_TIER.FREE) {
             const subscription = await this.supabaseService.checkSubscription(user.email);
-            if (subscription.isPaidUser) {
+            const isOnPortalByPass = BY_PASS_SUBSCRIPTION_CHECK.includes(user.email);
+            if (isOnPortalByPass) {
+                this.updatePlanTier(PLAN_TIER.PRO);
+                console.log(`User ${user.email} successfully upgraded to pro by pass`)
+                planTier = PLAN_TIER.PRO;
+            } else if (subscription.isPaidUser) {
                 this.updatePlanTier(PLAN_TIER.PRO);
                 console.log(`User ${user.email} successfully upgraded to pro`)
                 planTier = PLAN_TIER.PRO;
@@ -79,7 +91,7 @@ export class BillingService {
             }
         }
 
-
+        // Get monthly stats
         const { startTs: monthStartTs, endTs: monthEndTs } = getMonthStartAndEndTs();
         const pageData = await this.databaseService.db.PageData
             .where('createAtTs')
@@ -94,7 +106,6 @@ export class BillingService {
             total_remaining: planData.maxAllowedLinksPerMonth - total_used,
         }
 
-
         const summaryResults = await this.databaseService.db.SummaryResults
             .where('createAtTs')
             .between(monthStartTs, monthEndTs)
@@ -108,9 +119,32 @@ export class BillingService {
             total_remaining: planData.maxAllowedSummariesPerMonth - total_used_summaries,
         }
 
+        // Get daily journey stats
+        const startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
+        const startTs = startDate.getTime();
+
+        const endDate = new Date();
+        endDate.setHours(23, 59, 59, 999);
+        const endTs = endDate.getTime();
+
+        const dailyJourneyData = await this.databaseService.db.JourneyJobs
+            .where('createAtTs')
+            .between(startTs, endTs)
+            .reverse() // Get most recent first
+            .toArray();
+
+        const journeys_used = new Set(dailyJourneyData.map((page: any) => page.url)).size;
+        const journey_stats = {
+            journeys_used,
+            journeys_allowed: planData.maxJourneysPerDay,
+            journeys_remaining: planData.maxJourneysPerDay - journeys_used,
+        }
+
         return {
             website_stats,
             summary_stats,
+            journey_stats,
             isPaidUser: planTier === PLAN_TIER.PRO,
         }
     }
