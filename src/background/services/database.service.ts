@@ -81,8 +81,17 @@ interface JourneyJob {
   updatedAt: Date;
   createAtTs: number;
   updatedAtTs: number;
-  status: string; // 'pending', 'processing', 'completed', 'failed'
-  error: string;
+  status: "pending" | "processing" | "completed" | "error";
+  error?: string;
+  journeyContext?: {
+    position: number;
+    totalPages: number;
+    theme: string;
+    progress: {
+      percentage: number;
+      description: string;
+    };
+  };
 }
 
 export class Database extends Dexie {
