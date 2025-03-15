@@ -11,6 +11,7 @@ import { useUser } from "../providers/user.provider"
 import { sendToBackground } from "@plasmohq/messaging"
 import { isProduction } from "../misc/constants"
 import { draggableElement } from "../misc/draggable"
+import { analyticsTrack, SegmentAnalyticsEvents } from '../background/commons/analytics'
 
 // This tells Plasmo to inject these styles into the content script
 export const getStyle: PlasmoGetStyle = () => {
@@ -162,6 +163,11 @@ function MinkPageAppContent() {
             }
           })
           console.log('Direction saved via background messaging')
+          analyticsTrack(SegmentAnalyticsEvents.USER_JOURNEY_DIRECTION_SET, {
+            userEmail: user?.email,
+            direction: direction,
+            expiryTime: directionExpiry
+          })
         } catch (error) {
           console.error('Error saving direction:', error)
         }
@@ -172,6 +178,20 @@ function MinkPageAppContent() {
   }, [direction, directionExpiry])
 
   const handleClick = () => {
+    if (!isDialogVisible) {
+      analyticsTrack(SegmentAnalyticsEvents.USER_JOURNEY_PANEL_OPENED, {
+        userEmail: user?.email,
+        direction: direction,
+        expiryTime: directionExpiry
+      })
+    } else {
+      analyticsTrack(SegmentAnalyticsEvents.USER_JOURNEY_PANEL_CLOSED, {
+        userEmail: user?.email,
+        direction: direction,
+        expiryTime: directionExpiry
+      })
+    }
+
     setIsDialogVisible(!isDialogVisible)
     
     // // If run frequency is set to manual and we have a direction, process the current page
@@ -251,7 +271,12 @@ function MinkPageAppContent() {
     // Check if the user has reached their daily journey limit
     if (stats && stats.journey_stats && stats.journey_stats.journeys_remaining <= 0) {
       console.log("Daily journey limit reached")
-      
+      analyticsTrack(SegmentAnalyticsEvents.USER_JOURNEY_LIMIT_REACHED, {
+        userEmail: user?.email,
+        direction: direction,
+        expiryTime: directionExpiry
+      })
+
       // Show a message to the user
       setJourneyEntries(prev => {
         // Check if we already have an entry for this URL
@@ -311,7 +336,14 @@ function MinkPageAppContent() {
     }
     
     // Check if we should process based on run frequency setting
-    const runFrequency = settings?.options?.minkRunFrequency || "per-domain"
+    // change the default to manual later but this allows us to auto process for every user to provide value
+    // after 17th April 2025 it should be manual
+    const getDefaultRunFrequency = () => {
+      const now = new Date()
+      const targetDate = new Date("2025-04-17")
+      return now < targetDate ? "per-domain" : "manual"
+    }
+    const runFrequency = settings?.options?.minkRunFrequency || getDefaultRunFrequency()
     
     // Helper function to check if a domain has been processed
     const isDomainProcessed = (domain: string) => {
@@ -802,6 +834,13 @@ function MinkPageAppContent() {
         ? "https://buy.stripe.com/9AQg1neqrglEe76aEL"
         : "https://buy.stripe.com/test_4gweVb5HIe7TaAg5kk"
       
+      analyticsTrack(SegmentAnalyticsEvents.USER_CLICKED_UPGRADE_TO_PRO, {
+        userEmail: user?.email,
+        direction: direction,
+        expiryTime: directionExpiry,
+        runFrequency: settings?.options?.minkRunFrequency,
+        subscriptionLink: subscriptionLink
+      })
       // Open the upgrade page with user reference ID and email
       window.open(`${subscriptionLink}?client_reference_id=${user?.id}&prefilled_email=${user?.email}`, '_blank')
     } catch (error) {
