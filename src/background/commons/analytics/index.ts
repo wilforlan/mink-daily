@@ -34,6 +34,9 @@ export enum SegmentAnalyticsEvents {
   USER_JOURNEY_ENTRY_FAILED = 'User Journey Entry Failed - Mink Chrome Extension',
   USER_JOURNEY_ENTRY_SUCCESS = 'User Journey Entry Success - Mink Chrome Extension',
   USER_JOURNEY_DIRECTION_SET = 'User Journey Direction Set - Mink Chrome Extension',
+  USER_JOURNEY_DIRECTION_SET_MANUALLY = 'User Journey Direction Set Manually - Mink Chrome Extension',
+  USER_JOURNEY_PANEL_OPENED = 'User Journey Panel Opened - Mink Chrome Extension',
+  USER_JOURNEY_PANEL_CLOSED = 'User Journey Panel Closed - Mink Chrome Extension',
 }
 
 const updateIdentity = async () => {
