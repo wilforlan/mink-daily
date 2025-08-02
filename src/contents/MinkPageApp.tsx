@@ -606,12 +606,13 @@ function MinkPageAppContent() {
       }
       
       if (window.location.href !== lastUrlRef.current) {
-        const runFrequency = settings?.options?.minkRunFrequency || "per-domain"
+        const runFrequency = settings?.options?.minkRunFrequency || "manual"
         
         // Skip automatic processing if run frequency is set to manual
         if (runFrequency === "manual") {
           // Just update the lastUrlRef but don't process
           lastUrlRef.current = window.location.href
+          setIsDialogVisible(false)
           return
         }
         
@@ -635,21 +636,17 @@ function MinkPageAppContent() {
         } else if (runFrequency === "per-link") {
           // Only process if we haven't processed this URL yet
           if (!urlAlreadyProcessed) {
-            if (!isDialogVisible) {
-              setIsDialogVisible(true)
-            }
-            if (direction && !isProcessing) {
-              processCurrentPage()
-            }
-          }
-        } else if (runFrequency === "always") {
-          // Always process, even if we've seen this URL before
-          if (!isDialogVisible) {
             setIsDialogVisible(true)
           }
           if (direction && !isProcessing) {
             processCurrentPage()
           }
+        } else if (runFrequency === "always") {
+          // Always process, even if we've seen this URL before
+          setIsDialogVisible(true)
+          if (direction && !isProcessing) {
+            processCurrentPage()
+          } 
         }
       }
     })

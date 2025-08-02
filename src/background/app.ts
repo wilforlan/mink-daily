@@ -22,7 +22,7 @@ export class BackgroundApp extends ServiceWorkerApp {
 
   async onInstalled() {
     console.debug('App installed event received');
-    const welcomeUrl = isProduction ? 'https://usemink.com/#features' : 'https://useminkapp.netlify.app/#features';
+    const welcomeUrl = isProduction ? 'https://usemink.com/#features' : 'https://usemink.com/#features';
     chrome.runtime.setUninstallURL(configStore.getConfig('UNINSTALL_URL'));
     chrome.tabs.create({ url: welcomeUrl });
 
